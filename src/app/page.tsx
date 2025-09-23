@@ -1,9 +1,9 @@
-import HeroSection from "../Components/landingPage/Hero-sections"
-import Features from "../Components/landingPage/features-section"
-import CoreFeaturesSection from "@/Components/landingPage/Core-features"
-import StakeholderBenefitsSection from "@/Components/landingPage/Stakeholder-Benefits-Section"
-import MobileAppSection from "@/Components/landingPage/mobileApp-section"
-import Footer from "../Components/landingPage/footer"
+import HeroSection from "../components/landingPage/Hero-sections"
+import Features from "../components/landingPage/features-section"
+import CoreFeaturesSection from "@/components/landingPage/Core-features"
+import StakeholderBenefitsSection from "@/components/landingPage/Stakeholder-Benefits-Section"
+import MobileAppSection from "@/components/landingPage/mobileApp-section"
+import Footer from "../components/landingPage/footer"
 export default function Home() {
   return (
     <main className="min-h-screen">
