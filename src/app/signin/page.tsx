@@ -3,20 +3,36 @@
 import Link from "next/link"
 import { useState } from "react"
 import { FaApple, FaGoogle, FaFacebookF, FaEnvelope, FaPhone, FaLock } from "react-icons/fa"
+import { useRouter } from "next/navigation"
+import { authApi } from "@/lib/api/endpoints/auth"
 
 export default function SignInPage() {
   const [form, setForm] = useState({
     identifier: "", // email or phone
     password: ""
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle sign in logic here
+    setError(null)
+    setLoading(true)
+    try {
+      // Use OAuth2 password flow for compatibility with email or phone as username
+      await authApi.tokenLogin({ username: form.identifier, password: form.password })
+      router.push("/dashboard")
+    } catch (err: any) {
+      const message = err?.message || "Failed to sign in. Please check your credentials."
+      setError(message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -65,16 +81,22 @@ export default function SignInPage() {
               autoComplete="current-password"
             />
           </div>
+          {error && (
+            <div className="text-red-600 text-sm mb-2" role="alert">
+              {error}
+            </div>
+          )}
           <button
             type="submit"
-            className="w-full bg-[#8B2323] text-white py-2.5 rounded-lg font-semibold transition-all duration-200 hover:opacity-90 mb-1 cursor-pointer"
+            disabled={loading}
+            className="w-full bg-[#8B2323] text-white py-2.5 rounded-lg font-semibold transition-all duration-200 hover:opacity-90 mb-1 cursor-pointer disabled:opacity-60"
           >
-            Sign In
+            {loading ? "Signing In..." : "Sign In"}
           </button>
         </form>
         <div className="text-sm text-gray-600 mt-1 mb-2">
           Don't have an account?{' '}
-          <Link href="/login" className="text-[#8B2323] font-semibold hover:underline cursor-pointer">Sign Up</Link>
+          <Link href="/signup" className="text-[#8B2323] font-semibold hover:underline cursor-pointer">Sign Up</Link>
         </div>
         <div className="flex items-center w-full my-2">
           <div className="flex-grow h-px bg-gray-200" />
@@ -92,4 +114,5 @@ export default function SignInPage() {
       </div>
     </div>
   )
-} 
+}
+ 

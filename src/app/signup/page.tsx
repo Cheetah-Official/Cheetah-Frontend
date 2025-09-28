@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { FaApple, FaGoogle, FaFacebookF, FaUser, FaEnvelope, FaPhone, FaHome, FaLock } from "react-icons/fa"
 import { useRouter } from "next/navigation"
+import { authApi } from "@/lib/api/endpoints/auth"
 
 export default function SignupPage() {
   const [form, setForm] = useState({
@@ -12,18 +13,48 @@ export default function SignupPage() {
     phone: "",
     address: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
   })
   const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle sign up logic here
-    router.push('/dashboard')
+    setError(null)
+    setSuccess(null)
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match")
+      return
+    }
+    const [first_name, ...rest] = form.fullName.trim().split(" ")
+    const last_name = rest.join(" ") || ""
+    if (!first_name || !last_name) {
+      setError("Please enter your full name (first and last)")
+      return
+    }
+    setLoading(true)
+    try {
+      await authApi.register({
+        email: form.email,
+        password: form.password,
+        first_name,
+        last_name,
+        phone: form.phone || undefined,
+      })
+      setSuccess("Account created. Please sign in.")
+      setTimeout(() => router.push("/signin"), 800)
+    } catch (err: any) {
+      const message = err?.message || "Failed to create account."
+      setError(message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -48,8 +79,7 @@ export default function SignupPage() {
               name="fullName"
               value={form.fullName}
               onChange={handleChange}
-              placeholder="Full Name"
-              className="w-full px-3 text-black py-1.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#800000] focus:outline-none text-sm"
+              className="w-full px-3 py-1.5 text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#800000] focus:outline-none text-sm"
               required
               autoComplete="name"
             />
@@ -65,7 +95,6 @@ export default function SignupPage() {
               name="email"
               value={form.email}
               onChange={handleChange}
-              placeholder="Email"
               className="w-full px-3 py-1.5 text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#800000] focus:outline-none text-sm"
               required
               autoComplete="email"
@@ -82,9 +111,7 @@ export default function SignupPage() {
               name="phone"
               value={form.phone}
               onChange={handleChange}
-              placeholder="Phone Number"
               className="w-full px-3 py-1.5 text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#800000] focus:outline-none text-sm"
-              required
               autoComplete="tel"
             />
           </div>
@@ -99,9 +126,7 @@ export default function SignupPage() {
               name="address"
               value={form.address}
               onChange={handleChange}
-              placeholder="Home Address"
               className="w-full px-3 py-1.5 text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#800000] focus:outline-none text-sm"
-              required
               autoComplete="street-address"
             />
           </div>
@@ -116,7 +141,6 @@ export default function SignupPage() {
               name="password"
               value={form.password}
               onChange={handleChange}
-              placeholder="Create Password"
               className="w-full px-3 py-1.5 text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#800000] focus:outline-none text-sm"
               required
               autoComplete="new-password"
@@ -133,7 +157,6 @@ export default function SignupPage() {
               name="confirmPassword"
               value={form.confirmPassword}
               onChange={handleChange}
-              placeholder="Confirm Password"
               className="w-full px-3 py-1.5 text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#800000] focus:outline-none text-sm"
               required
               autoComplete="new-password"
@@ -141,9 +164,10 @@ export default function SignupPage() {
           </div>
           <button
             type="submit"
-            className="w-full bg-[#8B2323] text-white py-2 rounded-lg font-semibold transition-all duration-200 hover:opacity-90 mb-1 cursor-pointer"
+            disabled={loading}
+            className="w-full bg-[#8B2323] text-white py-2 rounded-lg font-semibold transition-all duration-200 hover:opacity-90 mb-1 cursor-pointer disabled:opacity-60"
           >
-            Sign Up
+            {loading ? "Creating Account..." : "Sign Up"}
           </button>
         </form>
         <div className="text-xs text-gray-600 mt-1 mb-1.5">
@@ -166,4 +190,4 @@ export default function SignupPage() {
       </div>
     </div>
   )
-} 
+}
