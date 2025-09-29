@@ -3,6 +3,8 @@
 import Image from "next/image"
 import { FaBus, FaBell, FaCog, FaSignOutAlt, FaChevronRight, FaChevronLeft, FaUser, FaWifi, FaCheckCircle, FaExclamationTriangle, FaDownload, FaBars, FaTimes, FaEnvelope, FaPhone, FaHome } from "react-icons/fa"
 import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useAuth } from "@/lib/useAuth"
 
 const companies = [
   { name: "Peace Mass", logo: "/PeaceMass-Logo.jpg" },
@@ -19,6 +21,9 @@ export default function DashboardPage() {
   const [passengers, setPassengers] = useState(1)
   const [activeTab, setActiveTab] = useState("transports")
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { user, loading, error, signOut } = useAuth()
 
   // Format current date as DD/MM/YYYY
   const formatDate = (date: Date) => {
@@ -34,6 +39,21 @@ export default function DashboardPage() {
     setDeparture("")
     setReturnDate("")
   }, [])
+
+  // Redirect unauthenticated users to signin
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace("/signin")
+    }
+  }, [loading, user, router])
+
+  // Pick up tab from query param for deep links (e.g., /dashboard?tab=notifications)
+  useEffect(() => {
+    const tab = searchParams.get("tab")
+    if (tab && ["transports", "notifications", "settings"].includes(tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
 
   // Handle date input formatting
   const handleDateChange = (value: string, setDate: (date: string) => void) => {
@@ -52,6 +72,30 @@ export default function DashboardPage() {
     // Limit to 10 characters (DD/MM/YYYY)
     if (formatted.length <= 10) {
       setDate(formatted)
+    }
+  }
+
+  const handleProceed = () => {
+    if (!from || !to || !departure) {
+      // Lightweight validation for demo purposes
+      alert("Please select From, To and Departure date")
+      return
+    }
+    const params = new URLSearchParams({
+      from,
+      to,
+      departure,
+      returnDate,
+      passengers: String(passengers),
+    })
+    router.push(`/compare/result?${params.toString()}`)
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+    } finally {
+      router.replace("/signin")
     }
   }
 
@@ -121,13 +165,16 @@ export default function DashboardPage() {
             </button>
           </nav>
         </div>
-        <button className="flex items-center gap-2 text-[#8B2323] mt-6 sm:mt-8 cursor-pointer text-sm sm:text-base">
+        <button onClick={handleLogout} className="flex items-center gap-2 text-[#8B2323] mt-6 sm:mt-8 cursor-pointer text-sm sm:text-base">
           <FaSignOutAlt className="w-4 h-4 sm:w-5 sm:h-5" /> Log out
         </button>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 xl:p-10 2xl:p-12 w-full">
+        {loading && (
+          <div className="text-center text-gray-600">Loading dashboard...</div>
+        )}
         {/* Mobile Header */}
         <div className="flex items-center justify-between mb-4 sm:mb-6 md:hidden">
           <button 
@@ -143,7 +190,7 @@ export default function DashboardPage() {
 
         <div className="flex items-center justify-between mb-4 sm:mb-6">
           <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-semibold text-[#8B2323]/80 flex items-center gap-2">
-            <span className="text-[#E08B2F] text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl">👋</span> Welcome, <span className="font-bold">Docky</span>
+            <span className="text-[#E08B2F] text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl">👋</span> Welcome, <span className="font-bold">{user ? user.first_name : ""}</span>
           </h2>
           <div className="hidden md:block w-10 h-10 lg:w-12 lg:h-12 xl:w-14 xl:h-14 rounded-full overflow-hidden border-2 border-[#8B2323]">
             <Image src="/Hero-2.jpeg" alt="User" width={40} height={40} className="lg:w-12 lg:h-12 xl:w-14 xl:h-14" />
@@ -177,20 +224,18 @@ export default function DashboardPage() {
               <div className="flex flex-col sm:flex-row items-start gap-2 w-full sm:w-auto sm:ml-4">
                 <span className="text-gray-500 text-xs sm:text-sm md:text-base">Departure Date</span>
                 <input 
-                  type="text" 
+                  type="date" 
                   value={departure}
-                  onChange={(e) => handleDateChange(e.target.value, setDeparture)}
-                  placeholder="DD/MM/YYYY" 
+                  onChange={(e) => setDeparture(e.target.value)}
                   className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border text-gray-700 bg-white focus:outline-none w-full sm:w-28 md:w-32 font-medium text-sm sm:text-base" 
                 />
               </div>
               <div className="flex flex-col sm:flex-row items-start gap-2 w-full sm:w-auto sm:ml-4">
                 <span className="text-gray-500 text-xs sm:text-sm md:text-base">Return Date <span className="text-xs text-[#E08B2F]">(if round trip)</span></span>
                 <input 
-                  type="text" 
+                  type="date" 
                   value={returnDate}
-                  onChange={(e) => handleDateChange(e.target.value, setReturnDate)}
-                  placeholder="DD/MM/YYYY" 
+                  onChange={(e) => setReturnDate(e.target.value)}
                   className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border text-gray-700 bg-white focus:outline-none w-full sm:w-28 md:w-32 font-medium text-sm sm:text-base" 
                 />
               </div>
@@ -224,7 +269,7 @@ export default function DashboardPage() {
 
             {/* Proceed Button */}
             <div className="flex justify-center lg:justify-end mt-3 sm:mt-4 lg:mt-2">
-              <button className="bg-[#8B2323] text-white px-6 sm:px-8 md:px-10 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base md:text-lg cursor-pointer w-full sm:w-auto">Proceed</button>
+              <button onClick={handleProceed} className="bg-[#8B2323] text-white px-6 sm:px-8 md:px-10 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base md:text-lg cursor-pointer w-full sm:w-auto">Proceed</button>
             </div>
           </div>
         )}
@@ -284,24 +329,24 @@ export default function DashboardPage() {
                 </div>
                 
                 {/* User Name */}
-                <h3 className="text-xl font-semibold text-gray-800">Godwin Obi</h3>
+                <h3 className="text-xl font-semibold text-gray-800">{user ? `${user.first_name} ${user.last_name}` : ""}</h3>
               </div>
 
               {/* Contact Information */}
               <div className="space-y-4">
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <FaEnvelope className="text-gray-500 w-5 h-5" />
-                  <span className="text-gray-700">godwinobi17@gmail.com</span>
+                  <span className="text-gray-700">{user?.email || ""}</span>
                 </div>
                 
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <FaPhone className="text-gray-500 w-5 h-5" />
-                  <span className="text-gray-700">08110051665</span>
+                  <span className="text-gray-700">{user?.phone ?? ""}</span>
                 </div>
                 
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <FaHome className="text-gray-500 w-5 h-5" />
-                  <span className="text-gray-700">Ikorodu, Lagos.</span>
+                  <span className="text-gray-700">&nbsp;</span>
                 </div>
               </div>
             </div>

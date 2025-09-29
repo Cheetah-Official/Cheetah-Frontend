@@ -1,51 +1,53 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { useState } from "react"
-import { FaApple, FaGoogle, FaFacebookF, FaEnvelope, FaPhone, FaLock } from "react-icons/fa"
-import { useRouter } from "next/navigation"
-import { authApi } from "@/lib/api/endpoints/auth"
+import { useMutation } from "@tanstack/react-query";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { FaApple, FaGoogle, FaEnvelope, FaPhone, FaLock } from "react-icons/fa";
+import { authApi } from "@/lib/api/endpoints/auth";
+import AuthCard from "@/components/AuthCard";
+
+const SignInSchema = z.object({
+  identifier: z.string().min(1, "Email or phone is required"),
+  password: z.string().min(1, "Password is required"),
+});
+
+type SignInForm = z.infer<typeof SignInSchema>;
 
 export default function SignInPage() {
-  const [form, setForm] = useState({
-    identifier: "", // email or phone
-    password: ""
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
+  const router = useRouter();
+  const { register, handleSubmit, formState: { errors } } = useForm<SignInForm>({ resolver: zodResolver(SignInSchema) });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-  }
+  const mutation = useMutation({
+    mutationFn: (payload: SignInForm) => authApi.tokenLogin({ username: payload.identifier, password: payload.password }),
+    onSuccess: () => router.push("/dashboard"),
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
-    try {
-      // Use OAuth2 password flow for compatibility with email or phone as username
-      await authApi.tokenLogin({ username: form.identifier, password: form.password })
-      router.push("/dashboard")
-    } catch (err: any) {
-      const message = err?.message || "Failed to sign in. Please check your credentials."
-      setError(message)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const onSubmit = (data: SignInForm) => mutation.mutate(data);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0A2384]">
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md flex flex-col items-center">
-        <div className="mb-4 flex flex-col items-center">
-          <img src="/Logo.png" alt="Cheetah Logo" className="h-10 mb-1" />
-          <h2 className="text-2xl font-bold mb-0.5 text-[#1A1A1A]">Sign In</h2>
-          <p className="text-gray-500 text-center text-sm max-w-xs mb-1">
-            Welcome back! Sign in to access your account.
-          </p>
-        </div>
-        <form className="w-full" onSubmit={handleSubmit} autoComplete="on">
+    <AuthCard
+      title="Sign In"
+      subtitle="Welcome back! Sign in to access your account."
+      footer={<>
+        Don't have an account?{' '}
+        <Link href="/signup" className="text-[#8B2323] font-semibold hover:underline cursor-pointer">Sign Up</Link>
+      </>}
+      socialButtons={
+        <>
+          <button className="border border-[#8B2323] text-[#8B2323] rounded-full p-2.5 hover:bg-[#8B2323]/10 transition-colors cursor-pointer">
+            <FaApple className="w-5 h-5" />
+          </button>
+          <button className="border border-[#8B2323] text-[#8B2323] rounded-full p-2.5 hover:bg-[#8B2323]/10 transition-colors cursor-pointer">
+            <FaGoogle className="w-5 h-5" />
+          </button>
+        </>
+      }
+    >
+        <form className="w-full" onSubmit={handleSubmit(onSubmit)} autoComplete="on">
           <div className="mb-2">
             <div className="flex items-center mb-0.5">
               <FaEnvelope className="text-gray-400 w-4 h-4 mr-1" />
@@ -55,14 +57,12 @@ export default function SignInPage() {
             <input
               id="identifier"
               type="text"
-              name="identifier"
-              value={form.identifier}
-              onChange={handleChange}
               placeholder="Email or Phone Number"
               className="w-full px-4 py-2 text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#800000] focus:outline-none text-sm"
-              required
               autoComplete="username"
+              {...register("identifier")}
             />
+            {errors.identifier && <p className="text-red-600 text-xs mt-1">{errors.identifier.message}</p>}
           </div>
           <div className="mb-2">
             <div className="flex items-center mb-0.5">
@@ -72,47 +72,24 @@ export default function SignInPage() {
             <input
               id="password"
               type="password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
               placeholder="Password"
               className="w-full px-4 py-2 text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#800000] focus:outline-none text-sm"
-              required
               autoComplete="current-password"
+              {...register("password")}
             />
+            {errors.password && <p className="text-red-600 text-xs mt-1">{errors.password.message}</p>}
           </div>
-          {error && (
-            <div className="text-red-600 text-sm mb-2" role="alert">
-              {error}
-            </div>
+          {mutation.isError && (
+            <div className="text-red-600 text-xs mb-2" role="alert">{(mutation.error as any)?.message || "Failed to sign in"}</div>
           )}
           <button
             type="submit"
-            disabled={loading}
+            disabled={mutation.isPending}
             className="w-full bg-[#8B2323] text-white py-2.5 rounded-lg font-semibold transition-all duration-200 hover:opacity-90 mb-1 cursor-pointer disabled:opacity-60"
           >
-            {loading ? "Signing In..." : "Sign In"}
+            {mutation.isPending ? "Signing In..." : "Sign In"}
           </button>
         </form>
-        <div className="text-sm text-gray-600 mt-1 mb-2">
-          Don't have an account?{' '}
-          <Link href="/signup" className="text-[#8B2323] font-semibold hover:underline cursor-pointer">Sign Up</Link>
-        </div>
-        <div className="flex items-center w-full my-2">
-          <div className="flex-grow h-px bg-gray-200" />
-          <span className="mx-2 text-gray-400 text-xs">or continue with</span>
-          <div className="flex-grow h-px bg-gray-200" />
-        </div>
-        <div className="flex justify-center gap-6 w-full mt-1">
-          <button className="border border-[#8B2323] text-[#8B2323] rounded-full p-2.5 hover:bg-[#8B2323]/10 transition-colors cursor-pointer">
-            <FaApple className="w-5 h-5" />
-          </button>
-          <button className="border border-[#8B2323] text-[#8B2323] rounded-full p-2.5 hover:bg-[#8B2323]/10 transition-colors cursor-pointer">
-            <FaGoogle className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-    </div>
-  )
+    </AuthCard>
+  );
 }
- 

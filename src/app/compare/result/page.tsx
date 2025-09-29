@@ -3,48 +3,35 @@
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { FaTimes } from "react-icons/fa"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 export default function CompareResult() {
   const [passengers, setPassengers] = useState(1)
   const [departureDate, setDepartureDate] = useState("")
   const [returnDate, setReturnDate] = useState("")
+  const [from, setFrom] = useState<string>("")
+  const [to, setTo] = useState<string>("")
   const router = useRouter()
-
-  // Format current date as DD/MM/YYYY
-  const formatDate = (date: Date) => {
-    const day = date.getDate().toString().padStart(2, '0')
-    const month = (date.getMonth() + 1).toString().padStart(2, '0')
-    const year = date.getFullYear()
-    return `${day}/${month}/${year}`
-  }
+  const searchParams = useSearchParams()
 
   // Set default dates on component mount
   useEffect(() => {
-    // Don't set default dates - let placeholders show
-    setDepartureDate("")
-    setReturnDate("")
-  }, [])
+    // Initialize from query params when available
+    const qpPassengers = searchParams.get("passengers")
+    const qpDeparture = searchParams.get("departure")
+    const qpReturn = searchParams.get("returnDate")
+    const qpFrom = searchParams.get("from")
+    const qpTo = searchParams.get("to")
 
-  // Handle date input formatting
-  const handleDateChange = (value: string, setDate: (date: string) => void) => {
-    // Remove all non-numeric characters
-    const numbers = value.replace(/\D/g, '')
-    
-    // Format as DD/MM/YYYY
-    let formatted = numbers
-    if (numbers.length >= 2) {
-      formatted = numbers.slice(0, 2) + '/' + numbers.slice(2)
+    if (qpPassengers) {
+      const num = parseInt(qpPassengers, 10)
+      if (!Number.isNaN(num) && num > 0) setPassengers(num)
     }
-    if (numbers.length >= 4) {
-      formatted = numbers.slice(0, 2) + '/' + numbers.slice(2, 4) + '/' + numbers.slice(4, 8)
-    }
-    
-    // Limit to 10 characters (DD/MM/YYYY)
-    if (formatted.length <= 10) {
-      setDate(formatted)
-    }
-  }
+    if (qpDeparture) setDepartureDate(qpDeparture)
+    if (qpReturn) setReturnDate(qpReturn)
+    if (qpFrom) setFrom(qpFrom)
+    if (qpTo) setTo(qpTo)
+  }, [searchParams])
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden">
@@ -74,7 +61,7 @@ export default function CompareResult() {
               <Image src="/PeaceMass-Logo.jpg" alt="Peace Mass" width={48} height={48} className="object-contain rounded-lg" />
               <div>
                 <div className="font-bold text-lg text-[#222]">Peace Mass</div>
-                <div className="text-gray-500 text-sm">Lagos - Abuja</div>
+                <div className="text-gray-500 text-sm">{from || "Lagos"} - {to || "Abuja"}</div>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -89,20 +76,18 @@ export default function CompareResult() {
               <div className="flex flex-col">
                 <span className="text-xs text-gray-500">Departure Date</span>
                 <input 
-                  type="text" 
+                  type="date" 
                   value={departureDate}
-                  onChange={(e) => handleDateChange(e.target.value, setDepartureDate)}
-                  placeholder="DD/MM/YYYY" 
+                  onChange={(e) => setDepartureDate(e.target.value)}
                   className="px-4 py-2 rounded-lg border text-gray-700 bg-white focus:outline-none w-36 font-medium" 
                 />
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-gray-500">Return Date <span className="text-xs text-[#E08B2F]">(if round trip)</span></span>
                 <input 
-                  type="text" 
+                  type="date" 
                   value={returnDate}
-                  onChange={(e) => handleDateChange(e.target.value, setReturnDate)}
-                  placeholder="DD/MM/YYYY" 
+                  onChange={(e) => setReturnDate(e.target.value)}
                   className="px-4 py-2 rounded-lg border text-gray-700 bg-white focus:outline-none w-36 font-medium" 
                 />
               </div>
