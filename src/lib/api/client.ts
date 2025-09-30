@@ -45,7 +45,9 @@ async function request<T>(method: HttpMethod, path: string, options: RequestOpti
         : typeof options.body === "string"
         ? options.body
         : JSON.stringify(options.body),
-    credentials: "include", // allow servers to set httpOnly cookies too
+    // Only include browser credentials (cookies) when we actually have a token.
+    // This avoids backends that attempt to validate empty/invalid cookies from failing guest flows.
+    credentials: token ? "include" : "omit",
   });
 
   const contentType = resp.headers.get("content-type") || "";

@@ -3,6 +3,8 @@
 import Image from "next/image"
 import { FaBus, FaBell, FaCog, FaSignOutAlt, FaChevronRight, FaChevronLeft, FaUser, FaWifi, FaCheckCircle, FaExclamationTriangle, FaDownload, FaBars, FaTimes, FaEnvelope, FaPhone, FaHome } from "react-icons/fa"
 import { useState, useEffect } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { bookingsApi } from "@/lib/api/endpoints/bookings"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/useAuth"
 
@@ -47,13 +49,48 @@ export default function DashboardPage() {
     }
   }, [loading, user, router])
 
-  // Pick up tab from query param for deep links (e.g., /dashboard?tab=notifications)
+  // Pick up tab from query param for deep links (support legacy 'notifications' -> 'activity')
   useEffect(() => {
     const tab = searchParams.get("tab")
-    if (tab && ["transports", "notifications", "settings"].includes(tab)) {
-      setActiveTab(tab)
+    if (tab) {
+      if (["transports", "activity", "settings"].includes(tab)) {
+        setActiveTab(tab)
+      } else if (tab === "notifications") {
+        setActiveTab("activity")
+      }
     }
   }, [searchParams])
+
+  // Activity: fetch user's bookings to populate Activity tab
+  const { data: userBookings, isLoading: loadingBookings, refetch: refetchUserBookings } = useQuery({
+    queryKey: ["userBookings"],
+    queryFn: () => bookingsApi.getUserBookings({ limit: 20, offset: 0 }),
+    enabled: !!user,
+  })
+
+  // Ensure bookings refresh immediately when auth state changes
+  useEffect(() => {
+    if (user) {
+      refetchUserBookings()
+    }
+  }, [user, refetchUserBookings])
+
+  // Provider statistics for Transports tab
+  const { data: providerStats } = useQuery({
+    queryKey: ["providerStatistics-dashboard"],
+    queryFn: () => bookingsApi.getProviderStatistics(),
+  })
+
+  // Choose an active (latest upcoming) booking for the Activity left panel and Trip Progress
+  const activeBooking = (() => {
+    if (!userBookings || userBookings.length === 0) return null
+    const parseTime = (b: any) => new Date(b.schedule_details?.departure_time || b.departure_time || 0).getTime()
+    const now = Date.now()
+    const future = userBookings.filter((b: any) => parseTime(b) >= now).sort((a: any, b: any) => parseTime(a) - parseTime(b))
+    if (future.length > 0) return future[0]
+    // else pick most recent past
+    return userBookings.slice().sort((a: any, b: any) => parseTime(b) - parseTime(a))[0]
+  })()
 
   // Handle date input formatting
   const handleDateChange = (value: string, setDate: (date: string) => void) => {
@@ -139,16 +176,16 @@ export default function DashboardPage() {
             </button>
             <button 
               className={`flex items-center w-full px-3 py-2.5 sm:py-3 rounded-lg font-semibold gap-3 cursor-pointer transition-colors text-sm sm:text-base ${
-                activeTab === "notifications" 
+                activeTab === "activity" 
                   ? "bg-[#8B2323] text-white" 
                   : "text-[#8B2323] hover:bg-[#8B2323]/10"
               }`}
               onClick={() => {
-                setActiveTab("notifications")
+                setActiveTab("activity")
                 setMobileMenuOpen(false)
               }}
             >
-              <FaBell className="w-4 h-4 sm:w-5 sm:h-5" /> Notifications
+              <FaBell className="w-4 h-4 sm:w-5 sm:h-5" /> Activity
             </button>
             <button 
               className={`flex items-center w-full px-3 py-2.5 sm:py-3 rounded-lg font-semibold gap-3 cursor-pointer transition-colors text-sm sm:text-base ${
@@ -204,7 +241,7 @@ export default function DashboardPage() {
             <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
               <div className="flex flex-col sm:flex-row items-start gap-2 w-full sm:w-auto">
                 <span className="text-gray-500 text-xs sm:text-sm md:text-base">From</span>
-                <select value={from} onChange={e => setFrom(e.target.value)} className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border text-gray-500 bg-white focus:outline-none cursor-pointer w-full sm:w-auto text-sm sm:text-base">
+                <select value={from} onChange={e => setFrom(e.target.value)} className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] cursor-pointer w-full sm:w-auto text-sm sm:text-base">
                   <option value="">Select City</option>
                   <option value="Lagos">Lagos</option>
                   <option value="Abuja">Abuja</option>
@@ -214,7 +251,7 @@ export default function DashboardPage() {
               <FaChevronRight className="text-gray-400 mx-2 hidden sm:block" />
               <div className="flex flex-col sm:flex-row items-start gap-2 w-full sm:w-auto">
                 <span className="text-gray-500 text-xs sm:text-sm md:text-base">To</span>
-                <select value={to} onChange={e => setTo(e.target.value)} className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border text-gray-500 bg-white focus:outline-none cursor-pointer w-full sm:w-auto text-sm sm:text-base">
+                <select value={to} onChange={e => setTo(e.target.value)} className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] cursor-pointer w-full sm:w-auto text-sm sm:text-base">
                   <option value="">Select City</option>
                   <option value="Lagos">Lagos</option>
                   <option value="Abuja">Abuja</option>
@@ -227,7 +264,7 @@ export default function DashboardPage() {
                   type="date" 
                   value={departure}
                   onChange={(e) => setDeparture(e.target.value)}
-                  className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border text-gray-700 bg-white focus:outline-none w-full sm:w-28 md:w-32 font-medium text-sm sm:text-base" 
+                  className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] w-full sm:w-28 md:w-32 font-medium text-sm sm:text-base" 
                 />
               </div>
               <div className="flex flex-col sm:flex-row items-start gap-2 w-full sm:w-auto sm:ml-4">
@@ -236,7 +273,7 @@ export default function DashboardPage() {
                   type="date" 
                   value={returnDate}
                   onChange={(e) => setReturnDate(e.target.value)}
-                  className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border text-gray-700 bg-white focus:outline-none w-full sm:w-28 md:w-32 font-medium text-sm sm:text-base" 
+                  className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] w-full sm:w-28 md:w-32 font-medium text-sm sm:text-base" 
                 />
               </div>
             </div>
@@ -244,7 +281,10 @@ export default function DashboardPage() {
             {/* Companies and Bus */}
             <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8 items-start">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4 flex-1">
-                {companies.map((company, idx) => (
+                {(Array.isArray((providerStats as any)?.providers) && (providerStats as any).providers.length > 0
+                  ? (providerStats as any).providers.map((p: any) => ({ name: p.provider_name || p.name || 'Provider', logo: '/Logo.png' }))
+                  : companies
+                ).slice(0, 6).map((company: any) => (
                   <button key={company.name} className="flex items-center gap-2 sm:gap-3 bg-white rounded-lg shadow-sm px-2 sm:px-3 md:px-4 py-2.5 sm:py-3 cursor-pointer border border-transparent hover:border-[#8B2323] transition">
                     <Image src={company.logo} alt={company.name} width={28} height={28} className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 object-contain" />
                     <span className="font-semibold text-[#222] text-xs sm:text-sm md:text-base">{company.name}</span>
@@ -353,99 +393,109 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Notifications Tab */}
-        {activeTab === "notifications" && (
+        {/* Activity Tab */}
+        {activeTab === "activity" && (
           <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
             {/* Left Column - Narrow */}
             <div className="w-full lg:w-1/3 space-y-3 sm:space-y-4">
               {/* Ticket Details Card */}
               <div className="bg-white rounded-xl p-3 sm:p-4 md:p-6 shadow-sm">
                 <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">Ticket Details</h3>
-                
+
                 {/* Company and Passenger Info */}
                 <div className="flex items-center justify-between mb-4 sm:mb-6">
                   <div className="flex items-center gap-2 sm:gap-3">
-                    <Image src="/CHISCO.png" alt="Chisco" width={36} height={36} className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 object-contain" />
+                    <Image src="/CHISCO.png" alt="Provider" width={36} height={36} className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 object-contain" />
                     <div>
-                      <h4 className="text-base sm:text-lg md:text-xl font-bold text-gray-800">Chisco</h4>
-                      <p className="text-gray-600 text-xs sm:text-sm md:text-base">Lagos - Abuja</p>
+                      <h4 className="text-base sm:text-lg md:text-xl font-bold text-gray-800">{activeBooking?.schedule_details?.provider_name || activeBooking?.provider_name || "—"}</h4>
+                      <p className="text-gray-600 text-xs sm:text-sm md:text-base">{activeBooking ? `${activeBooking.schedule_details?.origin || activeBooking.origin || "-"} - ${activeBooking.schedule_details?.destination || activeBooking.destination || "-"}` : "—"}</p>
                     </div>
                   </div>
                   <div className="bg-gray-100 px-2 sm:px-3 py-1 rounded-full">
-                    <span className="text-gray-800 font-medium text-xs sm:text-sm">2 Passengers</span>
+                    <span className="text-gray-800 font-medium text-xs sm:text-sm">{activeBooking?.passenger_count ?? (activeBooking?.passengers?.length ?? 0)} Passenger(s)</span>
                   </div>
                 </div>
-                
+
                 {/* Departure Date and Progress */}
                 <div className="mb-4 sm:mb-6">
                   <div className="flex justify-between items-center mb-2">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                      <span className="text-gray-500 text-xs sm:text-sm md:text-base">Departure Date</span>
-                      <span className="text-gray-800 font-bold text-xs sm:text-sm md:text-base">July 28th, 2025</span>
+                      <span className="text-gray-500 text-xs sm:text-sm md:text-base">Departure</span>
+                      <span className="text-gray-800 font-bold text-xs sm:text-sm md:text-base">{activeBooking?.schedule_details?.departure_time ? new Date(activeBooking.schedule_details.departure_time).toLocaleString() : "—"}</span>
                     </div>
-                    <span className="text-gray-800 font-bold text-xs sm:text-sm md:text-base">4 days</span>
+                    <span className="text-gray-800 font-bold text-xs sm:text-sm md:text-base">{activeBooking ? "" : "—"}</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
-                    <div className="bg-[#8B2323] h-1.5 sm:h-2 rounded-full" style={{ width: '60%' }}></div>
+                    <div className="bg-[#8B2323] h-1.5 sm:h-2 rounded-full" style={{ width: activeBooking ? '60%' : '0%' }}></div>
                   </div>
                 </div>
-                
+
                 {/* Amenities */}
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-6 mb-4 sm:mb-6">
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-500 text-base sm:text-lg">✓</span>
-                    <span className="text-gray-500 text-xs sm:text-sm">Free WiFi</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-500 text-base sm:text-lg">✓</span>
-                    <span className="text-gray-500 text-xs sm:text-sm">Free Insurance</span>
-                  </div>
+                  {(activeBooking?.schedule_details?.amenities || ["Free WiFi", "Insurance"]).slice(0, 2).map((label: string, idx: number) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className="text-green-500 text-base sm:text-lg">✓</span>
+                      <span className="text-gray-500 text-xs sm:text-sm">{label}</span>
+                    </div>
+                  ))}
                 </div>
-                
+
                 {/* Download Button */}
                 <div className="flex justify-center lg:justify-end">
-                  <button className="bg-[#8B2323] text-white py-2.5 sm:py-3 px-4 sm:px-6 md:px-8 rounded-lg font-semibold hover:bg-[#7A1F1F] transition-colors w-full sm:w-auto text-sm sm:text-base">
-                    Download Ticket
+                  <button
+                    className="bg-[#8B2323] text-white py-2.5 sm:py-3 px-4 sm:px-6 md:px-8 rounded-lg font-semibold hover:bg-[#7A1F1F] transition-colors w-full sm:w-auto text-sm sm:text-base disabled:bg-gray-300 disabled:text-gray-600"
+                    disabled={!activeBooking?.schedule_details?.schedule_id}
+                    onClick={() => activeBooking?.schedule_details?.schedule_id && router.push(`/bookings/${encodeURIComponent(activeBooking.schedule_details.schedule_id)}?passengers=${encodeURIComponent(activeBooking.passenger_count ?? (activeBooking.passengers?.length ?? 1))}`)}
+                  >
+                    {activeBooking ? 'View Ticket' : 'Download Ticket'}
                   </button>
                 </div>
               </div>
 
-              {/* Notification List Card */}
+              {/* Activity List Card */}
               <div className="bg-white rounded-xl p-3 sm:p-4 shadow-sm">
-                <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">Notification</h3>
-                <div className="space-y-2 sm:space-y-3 max-h-32 sm:max-h-48 overflow-y-auto">
-                  <div className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
-                    <FaWifi className="text-[#8B2323] w-3 h-3 sm:w-4 sm:h-4 mt-0.5 sm:mt-1 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs sm:text-sm font-semibold text-gray-800">WiFi Connected</span>
-                        <span className="text-xs text-gray-500">2 min ago</span>
+                <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">Activity</h3>
+                <div className="space-y-2 sm:space-y-3 max-h-48 overflow-y-auto">
+                  {loadingBookings && (
+                    <div className="text-gray-600 text-sm">Loading recent activity…</div>
+                  )}
+                  {!loadingBookings && (!userBookings || userBookings.length === 0) && (
+                    <div className="text-gray-600 text-sm">No recent activity.</div>
+                  )}
+                  {!loadingBookings && userBookings && userBookings.slice(0, 10).map((bk: any) => {
+                    const scheduleId = bk.schedule_id || bk.schedule_details?.schedule_id || ""
+                    const provider = bk.schedule_details?.provider_name || bk.provider_name || "Provider"
+                    const origin = bk.schedule_details?.origin || bk.origin || "-"
+                    const destination = bk.schedule_details?.destination || bk.destination || "-"
+                    const dep = bk.schedule_details?.departure_time || bk.departure_time
+                    const dateLabel = dep ? new Date(dep).toLocaleString() : ""
+                    const status = (bk.booking_status || bk.status || "").toString()
+                    const passengers = bk.passenger_count ?? (bk.passengers?.length ?? "-")
+                    const statusColor = status.toLowerCase().includes("confirm") ? "text-green-600" : status.toLowerCase().includes("cancel") ? "text-red-600" : "text-yellow-600"
+                    return (
+                      <div key={bk.booking_id || bk.booking_reference} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
+                        <FaCheckCircle className={`${statusColor} w-3 h-3 sm:w-4 sm:h-4 mt-0.5 sm:mt-1 flex-shrink-0`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs sm:text-sm font-semibold text-gray-800 truncate">{provider} — {origin} → {destination}</span>
+                            <span className="text-xs text-gray-500 ml-2 whitespace-nowrap">{dateLabel}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                            <span className={`font-medium ${statusColor}`}>{status || "Pending"}</span>
+                            <span>•</span>
+                            <span>{passengers} passenger(s)</span>
+                            {bk.booking_reference && (<><span>•</span><span>Ref: {bk.booking_reference}</span></>)}
+                          </div>
+                        </div>
+                        {scheduleId && (
+                          <button
+                            className="text-[#8B2323] text-xs sm:text-sm font-semibold hover:underline cursor-pointer"
+                            onClick={() => router.push(`/bookings/${encodeURIComponent(scheduleId)}?passengers=${encodeURIComponent(passengers || 1)}`)}
+                          >View</button>
+                        )}
                       </div>
-                      <p className="text-xs text-gray-600">Your device is now connected to the free WiFi network.</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
-                    <FaCheckCircle className="text-green-500 w-3 h-3 sm:w-4 sm:h-4 mt-0.5 sm:mt-1 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs sm:text-sm font-semibold text-gray-800">Ticket Confirmed</span>
-                        <span className="text-xs text-gray-500">1 hour ago</span>
-                      </div>
-                      <p className="text-xs text-gray-600">Your ticket has been confirmed and is ready for download.</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
-                    <FaExclamationTriangle className="text-yellow-500 w-3 h-3 sm:w-4 sm:h-4 mt-0.5 sm:mt-1 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs sm:text-sm font-semibold text-gray-800">Departure Reminder</span>
-                        <span className="text-xs text-gray-500">3 hours ago</span>
-                      </div>
-                      <p className="text-xs text-gray-600">Your bus departs in 4 days. Don't forget to arrive early!</p>
-                    </div>
-                  </div>
+                    )
+                  })}
                 </div>
               </div>
             </div>
@@ -455,53 +505,32 @@ export default function DashboardPage() {
               {/* Trip Progress Card */}
               <div className="bg-white rounded-xl p-3 sm:p-4 md:p-6 shadow-sm">
                 <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">Trip Progress</h3>
-                
-                {/* Progress Steps */}
+
+                {/* Progress Steps (driven by active booking) */}
                 <div className="space-y-4 sm:space-y-6">
-                  <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[#8B2323] rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm">1</div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Ticket Booked</h4>
-                      <p className="text-xs sm:text-sm text-gray-600">July 24th, 2025 at 2:30 PM</p>
-                    </div>
-                    <FaCheckCircle className="text-green-500 w-4 h-4 sm:w-5 sm:h-5" />
-                  </div>
-                  
-                  <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[#8B2323] rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm">2</div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Payment Confirmed</h4>
-                      <p className="text-xs sm:text-sm text-gray-600">July 24th, 2025 at 2:32 PM</p>
-                    </div>
-                    <FaCheckCircle className="text-green-500 w-4 h-4 sm:w-5 sm:h-5" />
-                  </div>
-                  
-                  <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 font-bold text-xs sm:text-sm">3</div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Boarding</h4>
-                      <p className="text-xs sm:text-sm text-gray-600">July 28th, 2025 at 6:00 AM</p>
-                    </div>
-                    <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-gray-300 rounded-full"></div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 font-bold text-xs sm:text-sm">4</div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Departure</h4>
-                      <p className="text-xs sm:text-sm text-gray-600">July 28th, 2025 at 7:00 AM</p>
-                    </div>
-                    <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-gray-300 rounded-full"></div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 font-bold text-xs sm:text-sm">5</div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Arrival</h4>
-                      <p className="text-xs sm:text-sm text-gray-600">July 28th, 2025 at 3:00 PM</p>
-                    </div>
-                    <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-gray-300 rounded-full"></div>
-                  </div>
+                  {(() => {
+                    const steps = [] as Array<{ title: string; at?: string | null; done: boolean }>
+                    const bookedAt = (activeBooking as any)?.created_at || (activeBooking as any)?.booking_time || null
+                    const paymentDone = ((activeBooking as any)?.payment_status || '').toLowerCase().includes('paid')
+                    const depTime = (activeBooking as any)?.schedule_details?.departure_time || null
+                    const arrTime = (activeBooking as any)?.schedule_details?.arrival_time || null
+                    steps.push({ title: 'Ticket Booked', at: bookedAt, done: Boolean(activeBooking) })
+                    steps.push({ title: 'Payment Confirmed', at: paymentDone ? bookedAt : null, done: paymentDone })
+                    steps.push({ title: 'Boarding', at: depTime, done: false })
+                    steps.push({ title: 'Departure', at: depTime, done: false })
+                    steps.push({ title: 'Arrival', at: arrTime, done: false })
+
+                    return steps.map((s, i) => (
+                      <div key={i} className="flex items-center gap-3 sm:gap-4">
+                        <div className={`w-6 h-6 sm:w-8 sm:h-8 ${s.done ? 'bg-[#8B2323] text-white' : 'bg-gray-300 text-gray-600'} rounded-full flex items-center justify-center font-bold text-xs sm:text-sm`}>{i + 1}</div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-800 text-sm sm:text-base">{s.title}</h4>
+                          <p className="text-xs sm:text-sm text-gray-600">{s.at ? new Date(s.at).toLocaleString() : '—'}</p>
+                        </div>
+                        {s.done ? <FaCheckCircle className="text-green-500 w-4 h-4 sm:w-5 sm:h-5" /> : <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-gray-300 rounded-full" />}
+                      </div>
+                    ))
+                  })()}
                 </div>
               </div>
 

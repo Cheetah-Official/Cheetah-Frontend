@@ -5,6 +5,8 @@ import { useState } from "react"
 import { Calendar, Building, ChevronDown } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import { useQuery } from "@tanstack/react-query"
+import { bookingsApi } from "@/lib/api/endpoints/bookings"
 
 const transportOptions = [
   {
@@ -34,23 +36,46 @@ export type CompareModalProps = {
 };
 
 export function CompareModal({ open, onClose, onSelect }: CompareModalProps) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["providerStatistics"],
+    queryFn: () => bookingsApi.getProviderStatistics(),
+    enabled: open,
+  })
+
+  const providerLogo = (name: string) => {
+    const n = (name || "").toLowerCase()
+    if (n.includes("peace")) return "/PeaceMass-Logo.jpg"
+    if (n.includes("gigm") || n.includes("god is good")) return "/GIGMotors_Logo 1.png"
+    if (n.includes("guo")) return "/GUO.png"
+    if (n.includes("chisco")) return "/CHISCO.png"
+    return "/Logo.png"
+  }
+
+  // Try to derive options from backend response; fallback to static
+  const derived: Array<{ name: string; logo: string; price?: string; route?: string }> = Array.isArray((data as any)?.providers)
+    ? (data as any).providers.map((p: any) => ({
+        name: p.provider_name || p.name || "Provider",
+        logo: providerLogo(p.provider_name || p.name),
+        price: p.average_price ? `₦${Math.round(p.average_price).toLocaleString()}` : undefined,
+        route: p.top_route || undefined,
+      }))
+    : []
+
   if (!open) return null
   return (
-    <div style={{
-      position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
-    }}>
+    <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
       <div style={{ background: "#fff", borderRadius: 12, padding: 24, minWidth: 320, maxWidth: 400, boxShadow: "0 2px 16px rgba(0,0,0,0.2)" }}>
         <button onClick={onClose} style={{ float: "right", fontWeight: "bold", fontSize: 18, background: "none", border: "none", cursor: "pointer" }}>×</button>
         <h2 style={{ marginTop: 0, marginBottom: 16, color: "#800000" }}>Compare Transport Options</h2>
         <Image src="/Hero-2.jpeg" alt="Comparison" width={350} height={120} style={{ borderRadius: 8, marginBottom: 16, objectFit: "cover" }} />
         <div>
-          {transportOptions.map((opt, idx) => (
+          {(isLoading ? transportOptions : (derived.length ? derived : transportOptions)).map((opt, idx) => (
             <div key={idx} style={{ display: "flex", alignItems: "center", marginBottom: 16, border: "1px solid #eee", borderRadius: 8, padding: 8 }}>
               <Image src={opt.logo} alt={opt.name} width={40} height={40} style={{ borderRadius: 6, marginRight: 12, objectFit: "contain" }} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 600 }}>{opt.name}</div>
-                <div style={{ fontSize: 13, color: "#555" }}>{opt.route}</div>
-                <div style={{ color: "#008000", fontWeight: 500 }}>{opt.price}</div>
+                {opt.route ? <div style={{ fontSize: 13, color: "#555" }}>{opt.route}</div> : null}
+                {opt.price ? <div style={{ color: "#008000", fontWeight: 500 }}>{opt.price}</div> : null}
               </div>
               <button onClick={() => onSelect(opt)} style={{ background: "#800000", color: "#fff", border: "none", borderRadius: 6, padding: "6px 14px", cursor: "pointer" }}>Pick</button>
             </div>
@@ -74,7 +99,19 @@ export default function BookingForm({ onCompareClick }: { onCompareClick?: () =>
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    router.push("/login")
+    // Basic validation
+    if (!formData.from || !formData.to || !formData.departure) {
+      alert("Please select From, To and a Departure date")
+      return
+    }
+    const params = new URLSearchParams({
+      from: formData.from,
+      to: formData.to,
+      departure: formData.departure,
+      returnDate: formData.return,
+      passengers: "1",
+    })
+    router.push(`/compare/result?${params.toString()}`)
   }
 
   const handlePick = (option: any) => {
@@ -167,8 +204,7 @@ export default function BookingForm({ onCompareClick }: { onCompareClick?: () =>
             <select
               value={formData.transportCompany}
               onChange={(e) => setFormData({ ...formData, transportCompany: e.target.value })}
-              className="w-full px-4 py-3 rounded-lg text-white text-sm focus:ring-2 focus:ring-[#8B8A8A] focus:outline-none transition-all duration-200 appearance-none"
-              style={{ backgroundColor: "#02091E33" }}
+              className="w-full px-4 py-3 rounded-lg bg-white text-gray-900 text-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] transition-all duration-200 appearance-none"
               title="Select a transport company"
             >
               <option value="">Select Transport Company</option>
@@ -191,14 +227,13 @@ export default function BookingForm({ onCompareClick }: { onCompareClick?: () =>
               <select
                 value={formData.from}
                 onChange={(e) => setFormData({ ...formData, from: e.target.value })}
-                className="w-full px-3 py-3 rounded-lg text-white text-sm focus:ring-2 focus:ring-[#8B8A8A] focus:outline-none transition-all duration-200 appearance-none"
-                style={{ backgroundColor: "#02091E33" }}
+                className="w-full px-3 py-3 rounded-lg bg-white text-gray-900 text-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] transition-all duration-200 appearance-none"
                 title="Select departure city"
               >
                 <option value="">Select City</option>
-                <option value="lagos">Lagos</option>
-                <option value="abuja">Abuja</option>
-                <option value="kano">Kano</option>
+                <option value="Lagos">Lagos</option>
+                <option value="Abuja">Abuja</option>
+                <option value="Kano">Kano</option>
               </select>
               <ChevronDown
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 w-3 h-3 pointer-events-none"
@@ -206,21 +241,19 @@ export default function BookingForm({ onCompareClick }: { onCompareClick?: () =>
               />
             </div>
           </div>
-
           <div className="space-y-1">
             <label className="text-white text-xs">To</label>
             <div className="relative">
               <select
                 value={formData.to}
                 onChange={(e) => setFormData({ ...formData, to: e.target.value })}
-                className="w-full px-3 py-3 rounded-lg text-white text-sm focus:ring-2 focus:ring-[#8B8A8A] focus:outline-none transition-all duration-200 appearance-none"
-                style={{ backgroundColor: "#02091E33" }}
+                className="w-full px-3 py-3 rounded-lg bg-white text-gray-900 text-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] transition-all duration-200 appearance-none"
                 title="Select destination city"
               >
                 <option value="">Select City</option>
-                <option value="lagos">Lagos</option>
-                <option value="abuja">Abuja</option>
-                <option value="kano">Kano</option>
+                <option value="Lagos">Lagos</option>
+                <option value="Abuja">Abuja</option>
+                <option value="Kano">Kano</option>
               </select>
               <ChevronDown
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 w-3 h-3 pointer-events-none"
@@ -238,12 +271,10 @@ export default function BookingForm({ onCompareClick }: { onCompareClick?: () =>
               <span>Departure Date</span>
             </div>
             <input
-              type="text"
-              placeholder="DD/MM/YYYY"
+              type="date"
               value={formData.departure}
               onChange={(e) => setFormData({ ...formData, departure: e.target.value })}
-              className="w-full px-3 py-3 rounded-lg text-white text-sm focus:ring-2 focus:ring-[#8B8A8A] focus:outline-none transition-all duration-200 placeholder-gray-400"
-              style={{ backgroundColor: "#02091E33" }}
+              className="w-full px-3 py-3 rounded-lg bg-white text-gray-900 text-sm border border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323]"
             />
           </div>
           <div className="space-y-1">
@@ -252,12 +283,10 @@ export default function BookingForm({ onCompareClick }: { onCompareClick?: () =>
               <span>Return Date {tripType === "one-way" ? "(if round trip)" : ""}</span>
             </div>
             <input
-              type="text"
-              placeholder="DD/MM/YYYY"
+              type="date"
               value={formData.return}
               onChange={(e) => setFormData({ ...formData, return: e.target.value })}
-              className="w-full px-3 py-3 rounded-lg text-white text-sm focus:ring-2 focus:ring-[#8B8A8A] focus:outline-none transition-all duration-200 placeholder-gray-400"
-              style={{ backgroundColor: "#02091E33" }}
+              className="w-full px-3 py-3 rounded-lg bg-white text-gray-900 text-sm border border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] disabled:bg-gray-100 disabled:text-gray-400"
               disabled={tripType === "one-way"}
             />
           </div>

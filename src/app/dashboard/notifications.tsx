@@ -7,7 +7,7 @@ export default function NotificationsPage() {
   const router = useRouter()
 
   useEffect(() => {
-    router.replace("/dashboard?tab=notifications")
+    router.replace("/dashboard?tab=activity")
   }, [router])
 
   return (
