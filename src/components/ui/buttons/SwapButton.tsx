@@ -1,9 +1,9 @@
-import { ArrowLeftRight } from "lucide-react"
-import { ButtonHTMLAttributes } from "react"
+import { ArrowLeftRight } from "lucide-react";
+import { ButtonHTMLAttributes } from "react";
 
 interface SwapButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  size?: "sm" | "md" | "lg"
-  variant?: "primary" | "secondary" | "ghost"
+  size?: "sm" | "md" | "lg";
+  variant?: "primary" | "secondary" | "ghost";
 }
 
 export function SwapButton({
@@ -16,13 +16,13 @@ export function SwapButton({
     sm: "p-1",
     md: "p-2",
     lg: "p-3",
-  }
+  };
 
   const variantClasses = {
     primary: "bg-red-600 text-white hover:bg-red-700",
     secondary: "bg-gray-200 text-gray-800 hover:bg-gray-300",
     ghost: "bg-transparent hover:bg-gray-100/50 text-gray-600",
-  }
+  };
 
   return (
     <button
@@ -34,7 +34,7 @@ export function SwapButton({
     >
       <ArrowLeftRight className={`w-4 h-4`} />
     </button>
-  )
+  );
 }
 
-export default SwapButton
+export default SwapButton;

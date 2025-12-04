@@ -1,18 +1,18 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function NotificationsPage() {
-  const router = useRouter()
+  const router = useRouter();
 
   useEffect(() => {
-    router.replace("/dashboard?tab=activity")
-  }, [router])
+    router.replace("/dashboard?tab=activity");
+  }, [router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-gray-600">Redirecting to notifications…</div>
     </div>
-  )
+  );
 }

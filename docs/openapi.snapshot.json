@@ -1,1 +1,2203 @@
-{"openapi":"3.1.0","info":{"title":"Cheetah API","description":"InterCity Transportation Aggregator Platform API","version":"1.0.0"},"paths":{"/":{"get":{"summary":"Root","operationId":"root__get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}}}},"/health":{"get":{"summary":"Health Check","operationId":"health_check_health_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}}}},"/auth/register":{"post":{"tags":["Authentication"],"summary":"Register","description":"Register a new user.","operationId":"register_auth_register_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserRegister"}}},"required":true},"responses":{"201":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/auth/token":{"post":{"tags":["Authentication"],"summary":"Login","description":"Login and get access token.","operationId":"login_auth_token_post","requestBody":{"content":{"application/x-www-form-urlencoded":{"schema":{"$ref":"#/components/schemas/Body_login_auth_token_post"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Token"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/auth/login":{"post":{"tags":["Authentication"],"summary":"Login With Json","description":"Login with JSON data and get access token.","operationId":"login_with_json_auth_login_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserLogin"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Token"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/auth/me":{"get":{"tags":["Authentication"],"summary":"Get Current User Profile","description":"Get current user profile.","operationId":"get_current_user_profile_auth_me_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"additionalProperties":true,"type":"object","title":"Response Get Current User Profile Auth Me Get"}}}}},"security":[{"OAuth2PasswordBearer":[]}]}},"/auth/password-reset-request":{"post":{"tags":["Authentication"],"summary":"Request Password Reset","description":"Request password reset token.","operationId":"request_password_reset_auth_password_reset_request_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/PasswordResetRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/auth/password-reset":{"post":{"tags":["Authentication"],"summary":"Reset Password","description":"Reset password using token.","operationId":"reset_password_auth_password_reset_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/PasswordReset"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/auth/logout":{"post":{"tags":["Authentication"],"summary":"Logout","description":"Logout endpoint (client should discard token).","operationId":"logout_auth_logout_post","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}}}},"/auth/verify-token":{"get":{"tags":["Authentication"],"summary":"Verify Token","description":"Verify if the current token is valid.","operationId":"verify_token_auth_verify_token_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}},"security":[{"OAuth2PasswordBearer":[]}]}},"/users/profile":{"get":{"tags":["Users"],"summary":"Get User Profile","description":"Get current user's profile with statistics.","operationId":"get_user_profile_users_profile_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"additionalProperties":true,"type":"object","title":"Response Get User Profile Users Profile Get"}}}}},"security":[{"OAuth2PasswordBearer":[]}]},"put":{"tags":["Users"],"summary":"Update User Profile","description":"Update current user's profile.","operationId":"update_user_profile_users_profile_put","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserProfileUpdate"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"additionalProperties":true,"type":"object","title":"Response Update User Profile Users Profile Put"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"OAuth2PasswordBearer":[]}]}},"/users/bookings":{"get":{"tags":["Users"],"summary":"Get User Bookings","description":"Get current user's booking history.","operationId":"get_user_bookings_users_bookings_get","security":[{"OAuth2PasswordBearer":[]}],"parameters":[{"name":"limit","in":"query","required":false,"schema":{"type":"integer","maximum":100,"minimum":1,"default":50,"title":"Limit"}},{"name":"offset","in":"query","required":false,"schema":{"type":"integer","minimum":0,"default":0,"title":"Offset"}},{"name":"status","in":"query","required":false,"schema":{"anyOf":[{"$ref":"#/components/schemas/BookingStatus"},{"type":"null"}],"title":"Status"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/UserBookingResponse"},"title":"Response Get User Bookings Users Bookings Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/users/insurance-policies":{"get":{"tags":["Users"],"summary":"Get User Insurance Policies","description":"Get current user's insurance policies.","operationId":"get_user_insurance_policies_users_insurance_policies_get","security":[{"OAuth2PasswordBearer":[]}],"parameters":[{"name":"limit","in":"query","required":false,"schema":{"type":"integer","maximum":100,"minimum":1,"default":50,"title":"Limit"}},{"name":"offset","in":"query","required":false,"schema":{"type":"integer","minimum":0,"default":0,"title":"Offset"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/UserInsurancePolicyResponse"},"title":"Response Get User Insurance Policies Users Insurance Policies Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/users/wifi-codes":{"get":{"tags":["Users"],"summary":"Get User Wifi Codes","description":"Get current user's WiFi codes.","operationId":"get_user_wifi_codes_users_wifi_codes_get","security":[{"OAuth2PasswordBearer":[]}],"parameters":[{"name":"limit","in":"query","required":false,"schema":{"type":"integer","maximum":100,"minimum":1,"default":50,"title":"Limit"}},{"name":"offset","in":"query","required":false,"schema":{"type":"integer","minimum":0,"default":0,"title":"Offset"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/UserWifiCodeResponse"},"title":"Response Get User Wifi Codes Users Wifi Codes Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/users/guest/{email}":{"get":{"tags":["Users"],"summary":"Get Guest User Info","description":"Get guest user information by email.","operationId":"get_guest_user_info_users_guest__email__get","parameters":[{"name":"email","in":"path","required":true,"schema":{"type":"string","format":"email","title":"Email"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"object","additionalProperties":true,"title":"Response Get Guest User Info Users Guest  Email  Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/users/admin/search":{"get":{"tags":["Users"],"summary":"Search Users","description":"Search users by various criteria (admin only).","operationId":"search_users_users_admin_search_get","security":[{"OAuth2PasswordBearer":[]}],"parameters":[{"name":"email","in":"query","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Email"}},{"name":"phone","in":"query","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Phone"}},{"name":"name","in":"query","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Name"}},{"name":"limit","in":"query","required":false,"schema":{"type":"integer","maximum":100,"minimum":1,"default":50,"title":"Limit"}},{"name":"offset","in":"query","required":false,"schema":{"type":"integer","minimum":0,"default":0,"title":"Offset"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/UserSearchResponse"},"title":"Response Search Users Users Admin Search Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/users/admin/{user_id}":{"get":{"tags":["Users"],"summary":"Get User By Id","description":"Get user profile by ID (admin only).","operationId":"get_user_by_id_users_admin__user_id__get","security":[{"OAuth2PasswordBearer":[]}],"parameters":[{"name":"user_id","in":"path","required":true,"schema":{"type":"string","title":"User Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"object","additionalProperties":true,"title":"Response Get User By Id Users Admin  User Id  Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/users/admin/{user_id}/bookings":{"get":{"tags":["Users"],"summary":"Get User Bookings Admin","description":"Get user's booking history (admin only).","operationId":"get_user_bookings_admin_users_admin__user_id__bookings_get","security":[{"OAuth2PasswordBearer":[]}],"parameters":[{"name":"user_id","in":"path","required":true,"schema":{"type":"string","title":"User Id"}},{"name":"limit","in":"query","required":false,"schema":{"type":"integer","maximum":100,"minimum":1,"default":50,"title":"Limit"}},{"name":"offset","in":"query","required":false,"schema":{"type":"integer","minimum":0,"default":0,"title":"Offset"}},{"name":"status","in":"query","required":false,"schema":{"anyOf":[{"$ref":"#/components/schemas/BookingStatus"},{"type":"null"}],"title":"Status"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/UserBookingResponse"},"title":"Response Get User Bookings Admin Users Admin  User Id  Bookings Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/users/admin/{user_id}/deactivate":{"post":{"tags":["Users"],"summary":"Deactivate User","description":"Deactivate a user account (admin only).","operationId":"deactivate_user_users_admin__user_id__deactivate_post","security":[{"OAuth2PasswordBearer":[]}],"parameters":[{"name":"user_id","in":"path","required":true,"schema":{"type":"string","title":"User Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/users/admin/{user_id}/activate":{"post":{"tags":["Users"],"summary":"Activate User","description":"Activate a user account (admin only).","operationId":"activate_user_users_admin__user_id__activate_post","security":[{"OAuth2PasswordBearer":[]}],"parameters":[{"name":"user_id","in":"path","required":true,"schema":{"type":"string","title":"User Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/bookings/search":{"get":{"tags":["Bookings"],"summary":"Search Routes","operationId":"search_routes_bookings_search_get","parameters":[{"name":"origin","in":"query","required":true,"schema":{"type":"string","description":"Origin city","title":"Origin"},"description":"Origin city"},{"name":"destination","in":"query","required":true,"schema":{"type":"string","description":"Destination city","title":"Destination"},"description":"Destination city"},{"name":"date","in":"query","required":true,"schema":{"type":"string","format":"date-time","description":"Travel date","title":"Date"},"description":"Travel date"},{"name":"max_price","in":"query","required":false,"schema":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Max Price"}},{"name":"min_price","in":"query","required":false,"schema":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Min Price"}},{"name":"departure_after","in":"query","required":false,"schema":{"anyOf":[{"type":"string","format":"date-time"},{"type":"null"}],"title":"Departure After"}},{"name":"departure_before","in":"query","required":false,"schema":{"anyOf":[{"type":"string","format":"date-time"},{"type":"null"}],"title":"Departure Before"}},{"name":"providers","in":"query","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"description":"Comma-separated provider codes","title":"Providers"},"description":"Comma-separated provider codes"},{"name":"vehicle_types","in":"query","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"description":"Comma-separated vehicle types","title":"Vehicle Types"},"description":"Comma-separated vehicle types"},{"name":"sort_by","in":"query","required":false,"schema":{"type":"string","default":"departure_time","title":"Sort By"}},{"name":"include_comparison","in":"query","required":false,"schema":{"type":"boolean","default":false,"title":"Include Comparison"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/bookings/schedule/{schedule_id}":{"get":{"tags":["Bookings"],"summary":"Get Schedule Details","operationId":"get_schedule_details_bookings_schedule__schedule_id__get","parameters":[{"name":"schedule_id","in":"path","required":true,"schema":{"type":"string","title":"Schedule Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"object","additionalProperties":true,"title":"Response Get Schedule Details Bookings Schedule  Schedule Id  Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/bookings/":{"post":{"tags":["Bookings"],"summary":"Create Booking","operationId":"create_booking_bookings__post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/BookingCreateRequest"}}},"required":true},"responses":{"201":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/BookingResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"OAuth2PasswordBearer":[]}]}},"/bookings/{booking_id}":{"get":{"tags":["Bookings"],"summary":"Get Booking Details","operationId":"get_booking_details_bookings__booking_id__get","security":[{"OAuth2PasswordBearer":[]}],"parameters":[{"name":"booking_id","in":"path","required":true,"schema":{"type":"string","title":"Booking Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"object","additionalProperties":true,"title":"Response Get Booking Details Bookings  Booking Id  Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/bookings/user/bookings":{"get":{"tags":["Bookings"],"summary":"Get User Bookings","operationId":"get_user_bookings_bookings_user_bookings_get","security":[{"OAuth2PasswordBearer":[]}],"parameters":[{"name":"limit","in":"query","required":false,"schema":{"type":"integer","maximum":100,"minimum":1,"default":50,"title":"Limit"}},{"name":"offset","in":"query","required":false,"schema":{"type":"integer","minimum":0,"default":0,"title":"Offset"}},{"name":"status","in":"query","required":false,"schema":{"anyOf":[{"$ref":"#/components/schemas/BookingStatus"},{"type":"null"}],"title":"Status"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"type":"object","additionalProperties":true},"title":"Response Get User Bookings Bookings User Bookings Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/bookings/{booking_id}/cancel":{"post":{"tags":["Bookings"],"summary":"Cancel Booking","operationId":"cancel_booking_bookings__booking_id__cancel_post","security":[{"OAuth2PasswordBearer":[]}],"parameters":[{"name":"booking_id","in":"path","required":true,"schema":{"type":"string","title":"Booking Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/bookings/reference/{booking_reference}":{"get":{"tags":["Bookings"],"summary":"Get Booking By Reference","operationId":"get_booking_by_reference_bookings_reference__booking_reference__get","parameters":[{"name":"booking_reference","in":"path","required":true,"schema":{"type":"string","title":"Booking Reference"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"object","additionalProperties":true,"title":"Response Get Booking By Reference Bookings Reference  Booking Reference  Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/bookings/price-comparison":{"get":{"tags":["Bookings"],"summary":"Get Price Comparison","operationId":"get_price_comparison_bookings_price_comparison_get","parameters":[{"name":"origin","in":"query","required":true,"schema":{"type":"string","title":"Origin"}},{"name":"destination","in":"query","required":true,"schema":{"type":"string","title":"Destination"}},{"name":"date","in":"query","required":true,"schema":{"type":"string","format":"date-time","title":"Date"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/bookings/providers/statistics":{"get":{"tags":["Bookings"],"summary":"Get Provider Statistics","operationId":"get_provider_statistics_bookings_providers_statistics_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"additionalProperties":true,"type":"object","title":"Response Get Provider Statistics Bookings Providers Statistics Get"}}}}}}},"/bookings/statistics":{"get":{"tags":["Bookings"],"summary":"Get Booking Statistics","operationId":"get_booking_statistics_bookings_statistics_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"additionalProperties":true,"type":"object","title":"Response Get Booking Statistics Bookings Statistics Get"}}}}},"security":[{"OAuth2PasswordBearer":[]}]}},"/bookings/admin/all":{"get":{"tags":["Bookings"],"summary":"Admin Get All Bookings","operationId":"admin_get_all_bookings_bookings_admin_all_get","security":[{"OAuth2PasswordBearer":[]}],"parameters":[{"name":"limit","in":"query","required":false,"schema":{"type":"integer","maximum":100,"minimum":1,"default":50,"title":"Limit"}},{"name":"offset","in":"query","required":false,"schema":{"type":"integer","minimum":0,"default":0,"title":"Offset"}},{"name":"status","in":"query","required":false,"schema":{"anyOf":[{"$ref":"#/components/schemas/BookingStatus"},{"type":"null"}],"title":"Status"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"type":"object","additionalProperties":true},"title":"Response Admin Get All Bookings Bookings Admin All Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/bookings/admin/{booking_id}/confirm":{"post":{"tags":["Bookings"],"summary":"Admin Confirm Booking","operationId":"admin_confirm_booking_bookings_admin__booking_id__confirm_post","security":[{"OAuth2PasswordBearer":[]}],"parameters":[{"name":"booking_id","in":"path","required":true,"schema":{"type":"string","title":"Booking Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/payments/initialize":{"post":{"tags":["Payments"],"summary":"Initialize Payment","description":"Initialize payment for a booking.","operationId":"initialize_payment_payments_initialize_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/PaymentInitializeRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/PaymentInitializeResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"OAuth2PasswordBearer":[]}]}},"/payments/verify/{payment_reference}":{"post":{"tags":["Payments"],"summary":"Verify Payment","description":"Verify payment status.","operationId":"verify_payment_payments_verify__payment_reference__post","parameters":[{"name":"payment_reference","in":"path","required":true,"schema":{"type":"string","title":"Payment Reference"}},{"name":"provider","in":"query","required":false,"schema":{"type":"string","description":"Payment provider","default":"paystack","title":"Provider"},"description":"Payment provider"}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/PaymentVerificationResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/payments/refund/{booking_id}":{"post":{"tags":["Payments"],"summary":"Process Refund","description":"Process refund for a booking.","operationId":"process_refund_payments_refund__booking_id__post","security":[{"OAuth2PasswordBearer":[]}],"parameters":[{"name":"booking_id","in":"path","required":true,"schema":{"type":"string","title":"Booking Id"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/RefundRequest"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/RefundResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/payments/methods":{"get":{"tags":["Payments"],"summary":"Get Payment Methods","description":"Get available payment methods.","operationId":"get_payment_methods_payments_methods_get","parameters":[{"name":"provider","in":"query","required":false,"schema":{"type":"string","description":"Payment provider","default":"paystack","title":"Provider"},"description":"Payment provider"}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/PaymentMethodResponse"},"title":"Response Get Payment Methods Payments Methods Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/payments/booking/{booking_id}/total":{"get":{"tags":["Payments"],"summary":"Calculate Booking Total","description":"Calculate total amount for a booking including fees.","operationId":"calculate_booking_total_payments_booking__booking_id__total_get","parameters":[{"name":"booking_id","in":"path","required":true,"schema":{"type":"string","title":"Booking Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/BookingTotalResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/payments/statistics":{"get":{"tags":["Payments"],"summary":"Get Payment Statistics","description":"Get payment statistics (admin only).","operationId":"get_payment_statistics_payments_statistics_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}},"security":[{"OAuth2PasswordBearer":[]}]}},"/payments/webhook/paystack":{"post":{"tags":["Payments"],"summary":"Paystack Webhook","description":"Handle Paystack webhook notifications.","operationId":"paystack_webhook_payments_webhook_paystack_post","requestBody":{"content":{"application/json":{"schema":{"additionalProperties":true,"type":"object","title":"Request Data"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/payments/webhook/flutterwave":{"post":{"tags":["Payments"],"summary":"Flutterwave Webhook","description":"Handle Flutterwave webhook notifications.","operationId":"flutterwave_webhook_payments_webhook_flutterwave_post","requestBody":{"content":{"application/json":{"schema":{"additionalProperties":true,"type":"object","title":"Request Data"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}}},"components":{"schemas":{"Body_login_auth_token_post":{"properties":{"grant_type":{"anyOf":[{"type":"string","pattern":"^password$"},{"type":"null"}],"title":"Grant Type"},"username":{"type":"string","title":"Username"},"password":{"type":"string","format":"password","title":"Password"},"scope":{"type":"string","title":"Scope","default":""},"client_id":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Client Id"},"client_secret":{"anyOf":[{"type":"string"},{"type":"null"}],"format":"password","title":"Client Secret"}},"type":"object","required":["username","password"],"title":"Body_login_auth_token_post"},"BookingCreateRequest":{"properties":{"schedule_id":{"type":"string","title":"Schedule Id"},"passenger_details":{"items":{"$ref":"#/components/schemas/PassengerDetail"},"type":"array","title":"Passenger Details"},"guest_email":{"anyOf":[{"type":"string","format":"email"},{"type":"null"}],"title":"Guest Email"},"guest_phone":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Guest Phone"}},"type":"object","required":["schedule_id","passenger_details"],"title":"BookingCreateRequest"},"BookingResponse":{"properties":{"booking_id":{"type":"string","title":"Booking Id"},"booking_reference":{"type":"string","title":"Booking Reference"},"provider_booking_reference":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Provider Booking Reference"},"total_amount":{"type":"number","title":"Total Amount"},"booking_status":{"type":"string","title":"Booking Status"},"payment_status":{"type":"string","title":"Payment Status"},"passenger_count":{"type":"integer","title":"Passenger Count"},"schedule_details":{"additionalProperties":true,"type":"object","title":"Schedule Details"}},"type":"object","required":["booking_id","booking_reference","total_amount","booking_status","payment_status","passenger_count","schedule_details"],"title":"BookingResponse"},"BookingStatus":{"type":"string","enum":["pending","confirmed","cancelled","completed"],"title":"BookingStatus","description":"Booking status enumeration."},"BookingTotalResponse":{"properties":{"base_amount":{"type":"number","title":"Base Amount"},"booking_fee":{"type":"number","title":"Booking Fee"},"platform_fee":{"type":"number","title":"Platform Fee"},"insurance_fee":{"type":"number","title":"Insurance Fee"},"wifi_fee":{"type":"number","title":"Wifi Fee"},"total_fees":{"type":"number","title":"Total Fees"},"grand_total":{"type":"number","title":"Grand Total"},"breakdown":{"additionalProperties":true,"type":"object","title":"Breakdown"}},"type":"object","required":["base_amount","booking_fee","platform_fee","insurance_fee","wifi_fee","total_fees","grand_total","breakdown"],"title":"BookingTotalResponse"},"HTTPValidationError":{"properties":{"detail":{"items":{"$ref":"#/components/schemas/ValidationError"},"type":"array","title":"Detail"}},"type":"object","title":"HTTPValidationError"},"PassengerDetail":{"properties":{"first_name":{"type":"string","title":"First Name"},"last_name":{"type":"string","title":"Last Name"},"phone":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Phone"},"email":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Email"},"id_type":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Id Type"},"id_number":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Id Number"}},"type":"object","required":["first_name","last_name"],"title":"PassengerDetail"},"PasswordReset":{"properties":{"token":{"type":"string","title":"Token"},"new_password":{"type":"string","title":"New Password"}},"type":"object","required":["token","new_password"],"title":"PasswordReset"},"PasswordResetRequest":{"properties":{"email":{"type":"string","format":"email","title":"Email"}},"type":"object","required":["email"],"title":"PasswordResetRequest"},"PaymentInitializeRequest":{"properties":{"booking_id":{"type":"string","title":"Booking Id"},"payment_method":{"type":"string","title":"Payment Method","default":"card"},"provider":{"type":"string","title":"Provider","default":"paystack"}},"type":"object","required":["booking_id"],"title":"PaymentInitializeRequest"},"PaymentInitializeResponse":{"properties":{"payment_reference":{"type":"string","title":"Payment Reference"},"status":{"type":"string","title":"Status"},"amount":{"type":"number","title":"Amount"},"currency":{"type":"string","title":"Currency"},"payment_method":{"type":"string","title":"Payment Method"},"provider":{"type":"string","title":"Provider"},"authorization_url":{"type":"string","title":"Authorization Url"},"access_code":{"type":"string","title":"Access Code"},"expires_at":{"type":"number","title":"Expires At"}},"type":"object","required":["payment_reference","status","amount","currency","payment_method","provider","authorization_url","access_code","expires_at"],"title":"PaymentInitializeResponse"},"PaymentMethodResponse":{"properties":{"method":{"type":"string","title":"Method"},"name":{"type":"string","title":"Name"},"provider":{"type":"string","title":"Provider"},"currency":{"type":"string","title":"Currency"}},"type":"object","required":["method","name","provider","currency"],"title":"PaymentMethodResponse"},"PaymentVerificationResponse":{"properties":{"payment_reference":{"type":"string","title":"Payment Reference"},"status":{"type":"string","title":"Status"},"amount":{"type":"number","title":"Amount"},"currency":{"type":"string","title":"Currency"},"provider":{"type":"string","title":"Provider"},"transaction_id":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Transaction Id"},"gateway_response":{"type":"string","title":"Gateway Response"},"paid_at":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Paid At"},"message":{"type":"string","title":"Message"}},"type":"object","required":["payment_reference","status","amount","currency","provider","gateway_response","message"],"title":"PaymentVerificationResponse"},"RefundRequest":{"properties":{"amount":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Amount"},"reason":{"type":"string","title":"Reason","default":"Customer request"}},"type":"object","title":"RefundRequest"},"RefundResponse":{"properties":{"refund_reference":{"type":"string","title":"Refund Reference"},"status":{"type":"string","title":"Status"},"amount":{"type":"number","title":"Amount"},"currency":{"type":"string","title":"Currency"},"booking_reference":{"type":"string","title":"Booking Reference"},"reason":{"type":"string","title":"Reason"},"processed_at":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Processed At"},"message":{"type":"string","title":"Message"}},"type":"object","required":["refund_reference","status","amount","currency","booking_reference","reason","message"],"title":"RefundResponse"},"Token":{"properties":{"access_token":{"type":"string","title":"Access Token"},"token_type":{"type":"string","title":"Token Type"},"expires_in":{"type":"integer","title":"Expires In"},"user_id":{"type":"string","title":"User Id"},"user_email":{"type":"string","title":"User Email"},"user_role":{"type":"string","title":"User Role"}},"type":"object","required":["access_token","token_type","expires_in","user_id","user_email","user_role"],"title":"Token"},"UserBookingResponse":{"properties":{"id":{"type":"string","title":"Id"},"booking_reference":{"type":"string","title":"Booking Reference"},"schedule_id":{"type":"string","title":"Schedule Id"},"passenger_count":{"type":"integer","title":"Passenger Count"},"total_amount":{"type":"number","title":"Total Amount"},"booking_status":{"type":"string","title":"Booking Status"},"payment_status":{"type":"string","title":"Payment Status"},"created_at":{"type":"string","title":"Created At"},"provider_booking_reference":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Provider Booking Reference"},"notes":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Notes"}},"type":"object","required":["id","booking_reference","schedule_id","passenger_count","total_amount","booking_status","payment_status","created_at"],"title":"UserBookingResponse"},"UserInsurancePolicyResponse":{"properties":{"id":{"type":"string","title":"Id"},"booking_id":{"type":"string","title":"Booking Id"},"policy_number":{"type":"string","title":"Policy Number"},"coverage_details_url":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Coverage Details Url"},"status":{"type":"string","title":"Status"},"start_date":{"type":"string","title":"Start Date"},"end_date":{"type":"string","title":"End Date"},"coverage_amount":{"type":"number","title":"Coverage Amount"},"created_at":{"type":"string","title":"Created At"}},"type":"object","required":["id","booking_id","policy_number","status","start_date","end_date","coverage_amount","created_at"],"title":"UserInsurancePolicyResponse"},"UserLogin":{"properties":{"email":{"type":"string","format":"email","title":"Email"},"password":{"type":"string","title":"Password"}},"type":"object","required":["email","password"],"title":"UserLogin"},"UserProfileUpdate":{"properties":{"first_name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"First Name"},"last_name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Last Name"},"phone":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Phone"}},"type":"object","title":"UserProfileUpdate"},"UserRegister":{"properties":{"email":{"type":"string","format":"email","title":"Email"},"password":{"type":"string","title":"Password"},"first_name":{"type":"string","title":"First Name"},"last_name":{"type":"string","title":"Last Name"},"phone":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Phone"}},"type":"object","required":["email","password","first_name","last_name"],"title":"UserRegister"},"UserResponse":{"properties":{"id":{"type":"string","title":"Id"},"email":{"type":"string","title":"Email"},"first_name":{"type":"string","title":"First Name"},"last_name":{"type":"string","title":"Last Name"},"phone":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Phone"},"role":{"type":"string","title":"Role"},"is_active":{"type":"boolean","title":"Is Active"},"is_verified":{"type":"boolean","title":"Is Verified"}},"type":"object","required":["id","email","first_name","last_name","role","is_active","is_verified"],"title":"UserResponse"},"UserSearchResponse":{"properties":{"id":{"type":"string","title":"Id"},"email":{"type":"string","title":"Email"},"phone":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Phone"},"first_name":{"type":"string","title":"First Name"},"last_name":{"type":"string","title":"Last Name"},"role":{"type":"string","title":"Role"},"is_active":{"type":"boolean","title":"Is Active"},"is_verified":{"type":"boolean","title":"Is Verified"},"created_at":{"type":"string","title":"Created At"}},"type":"object","required":["id","email","first_name","last_name","role","is_active","is_verified","created_at"],"title":"UserSearchResponse"},"UserWifiCodeResponse":{"properties":{"id":{"type":"string","title":"Id"},"booking_id":{"type":"string","title":"Booking Id"},"code":{"type":"string","title":"Code"},"qr_code_data":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Qr Code Data"},"expiry_time":{"type":"string","title":"Expiry Time"},"usage_status":{"type":"string","title":"Usage Status"},"bandwidth_limit_mb":{"anyOf":[{"type":"integer"},{"type":"null"}],"title":"Bandwidth Limit Mb"},"created_at":{"type":"string","title":"Created At"}},"type":"object","required":["id","booking_id","code","expiry_time","usage_status","created_at"],"title":"UserWifiCodeResponse"},"ValidationError":{"properties":{"loc":{"items":{"anyOf":[{"type":"string"},{"type":"integer"}]},"type":"array","title":"Location"},"msg":{"type":"string","title":"Message"},"type":{"type":"string","title":"Error Type"}},"type":"object","required":["loc","msg","type"],"title":"ValidationError"}},"securitySchemes":{"OAuth2PasswordBearer":{"type":"oauth2","flows":{"password":{"scopes":{},"tokenUrl":"auth/token"}}}}}}
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Cheetah API",
+    "description": "InterCity Transportation Aggregator Platform API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Root",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Register",
+        "description": "Register a new user.",
+        "operationId": "register_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UserRegister" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/token": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Login",
+        "description": "Login and get access token.",
+        "operationId": "login_auth_token_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_login_auth_token_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Token" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Login With Json",
+        "description": "Login with JSON data and get access token.",
+        "operationId": "login_with_json_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UserLogin" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Token" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Get Current User Profile",
+        "description": "Get current user profile.",
+        "operationId": "get_current_user_profile_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Current User Profile Auth Me Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "OAuth2PasswordBearer": [] }]
+      }
+    },
+    "/auth/password-reset-request": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Request Password Reset",
+        "description": "Request password reset token.",
+        "operationId": "request_password_reset_auth_password_reset_request_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PasswordResetRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/password-reset": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Reset Password",
+        "description": "Reset password using token.",
+        "operationId": "reset_password_auth_password_reset_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PasswordReset" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Logout",
+        "description": "Logout endpoint (client should discard token).",
+        "operationId": "logout_auth_logout_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          }
+        }
+      }
+    },
+    "/auth/verify-token": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Verify Token",
+        "description": "Verify if the current token is valid.",
+        "operationId": "verify_token_auth_verify_token_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          }
+        },
+        "security": [{ "OAuth2PasswordBearer": [] }]
+      }
+    },
+    "/users/profile": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get User Profile",
+        "description": "Get current user's profile with statistics.",
+        "operationId": "get_user_profile_users_profile_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get User Profile Users Profile Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "OAuth2PasswordBearer": [] }]
+      },
+      "put": {
+        "tags": ["Users"],
+        "summary": "Update User Profile",
+        "description": "Update current user's profile.",
+        "operationId": "update_user_profile_users_profile_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UserProfileUpdate" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Update User Profile Users Profile Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        },
+        "security": [{ "OAuth2PasswordBearer": [] }]
+      }
+    },
+    "/users/bookings": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get User Bookings",
+        "description": "Get current user's booking history.",
+        "operationId": "get_user_bookings_users_bookings_get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "$ref": "#/components/schemas/BookingStatus" },
+                { "type": "null" }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserBookingResponse"
+                  },
+                  "title": "Response Get User Bookings Users Bookings Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/insurance-policies": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get User Insurance Policies",
+        "description": "Get current user's insurance policies.",
+        "operationId": "get_user_insurance_policies_users_insurance_policies_get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserInsurancePolicyResponse"
+                  },
+                  "title": "Response Get User Insurance Policies Users Insurance Policies Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/wifi-codes": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get User Wifi Codes",
+        "description": "Get current user's WiFi codes.",
+        "operationId": "get_user_wifi_codes_users_wifi_codes_get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserWifiCodeResponse"
+                  },
+                  "title": "Response Get User Wifi Codes Users Wifi Codes Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/guest/{email}": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get Guest User Info",
+        "description": "Get guest user information by email.",
+        "operationId": "get_guest_user_info_users_guest__email__get",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "email", "title": "Email" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Guest User Info Users Guest  Email  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/admin/search": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Search Users",
+        "description": "Search users by various criteria (admin only).",
+        "operationId": "search_users_users_admin_search_get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "title": "Email"
+            }
+          },
+          {
+            "name": "phone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "title": "Phone"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "title": "Name"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserSearchResponse"
+                  },
+                  "title": "Response Search Users Users Admin Search Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/admin/{user_id}": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get User By Id",
+        "description": "Get user profile by ID (admin only).",
+        "operationId": "get_user_by_id_users_admin__user_id__get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "User Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get User By Id Users Admin  User Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/admin/{user_id}/bookings": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get User Bookings Admin",
+        "description": "Get user's booking history (admin only).",
+        "operationId": "get_user_bookings_admin_users_admin__user_id__bookings_get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "User Id" }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "$ref": "#/components/schemas/BookingStatus" },
+                { "type": "null" }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserBookingResponse"
+                  },
+                  "title": "Response Get User Bookings Admin Users Admin  User Id  Bookings Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/admin/{user_id}/deactivate": {
+      "post": {
+        "tags": ["Users"],
+        "summary": "Deactivate User",
+        "description": "Deactivate a user account (admin only).",
+        "operationId": "deactivate_user_users_admin__user_id__deactivate_post",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "User Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/admin/{user_id}/activate": {
+      "post": {
+        "tags": ["Users"],
+        "summary": "Activate User",
+        "description": "Activate a user account (admin only).",
+        "operationId": "activate_user_users_admin__user_id__activate_post",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "User Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bookings/search": {
+      "get": {
+        "tags": ["Bookings"],
+        "summary": "Search Routes",
+        "operationId": "search_routes_bookings_search_get",
+        "parameters": [
+          {
+            "name": "origin",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Origin city",
+              "title": "Origin"
+            },
+            "description": "Origin city"
+          },
+          {
+            "name": "destination",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Destination city",
+              "title": "Destination"
+            },
+            "description": "Destination city"
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Travel date",
+              "title": "Date"
+            },
+            "description": "Travel date"
+          },
+          {
+            "name": "max_price",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "number" }, { "type": "null" }],
+              "title": "Max Price"
+            }
+          },
+          {
+            "name": "min_price",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "number" }, { "type": "null" }],
+              "title": "Min Price"
+            }
+          },
+          {
+            "name": "departure_after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "type": "string", "format": "date-time" },
+                { "type": "null" }
+              ],
+              "title": "Departure After"
+            }
+          },
+          {
+            "name": "departure_before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "type": "string", "format": "date-time" },
+                { "type": "null" }
+              ],
+              "title": "Departure Before"
+            }
+          },
+          {
+            "name": "providers",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "description": "Comma-separated provider codes",
+              "title": "Providers"
+            },
+            "description": "Comma-separated provider codes"
+          },
+          {
+            "name": "vehicle_types",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "description": "Comma-separated vehicle types",
+              "title": "Vehicle Types"
+            },
+            "description": "Comma-separated vehicle types"
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "departure_time",
+              "title": "Sort By"
+            }
+          },
+          {
+            "name": "include_comparison",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Comparison"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bookings/schedule/{schedule_id}": {
+      "get": {
+        "tags": ["Bookings"],
+        "summary": "Get Schedule Details",
+        "operationId": "get_schedule_details_bookings_schedule__schedule_id__get",
+        "parameters": [
+          {
+            "name": "schedule_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Schedule Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Schedule Details Bookings Schedule  Schedule Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bookings/": {
+      "post": {
+        "tags": ["Bookings"],
+        "summary": "Create Booking",
+        "operationId": "create_booking_bookings__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BookingCreateRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BookingResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        },
+        "security": [{ "OAuth2PasswordBearer": [] }]
+      }
+    },
+    "/bookings/{booking_id}": {
+      "get": {
+        "tags": ["Bookings"],
+        "summary": "Get Booking Details",
+        "operationId": "get_booking_details_bookings__booking_id__get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "booking_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Booking Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Booking Details Bookings  Booking Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bookings/user/bookings": {
+      "get": {
+        "tags": ["Bookings"],
+        "summary": "Get User Bookings",
+        "operationId": "get_user_bookings_bookings_user_bookings_get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "$ref": "#/components/schemas/BookingStatus" },
+                { "type": "null" }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "object", "additionalProperties": true },
+                  "title": "Response Get User Bookings Bookings User Bookings Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bookings/{booking_id}/cancel": {
+      "post": {
+        "tags": ["Bookings"],
+        "summary": "Cancel Booking",
+        "operationId": "cancel_booking_bookings__booking_id__cancel_post",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "booking_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Booking Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bookings/reference/{booking_reference}": {
+      "get": {
+        "tags": ["Bookings"],
+        "summary": "Get Booking By Reference",
+        "operationId": "get_booking_by_reference_bookings_reference__booking_reference__get",
+        "parameters": [
+          {
+            "name": "booking_reference",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Booking Reference" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Booking By Reference Bookings Reference  Booking Reference  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bookings/price-comparison": {
+      "get": {
+        "tags": ["Bookings"],
+        "summary": "Get Price Comparison",
+        "operationId": "get_price_comparison_bookings_price_comparison_get",
+        "parameters": [
+          {
+            "name": "origin",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "title": "Origin" }
+          },
+          {
+            "name": "destination",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "title": "Destination" }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "title": "Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bookings/providers/statistics": {
+      "get": {
+        "tags": ["Bookings"],
+        "summary": "Get Provider Statistics",
+        "operationId": "get_provider_statistics_bookings_providers_statistics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Provider Statistics Bookings Providers Statistics Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bookings/statistics": {
+      "get": {
+        "tags": ["Bookings"],
+        "summary": "Get Booking Statistics",
+        "operationId": "get_booking_statistics_bookings_statistics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Booking Statistics Bookings Statistics Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "OAuth2PasswordBearer": [] }]
+      }
+    },
+    "/bookings/admin/all": {
+      "get": {
+        "tags": ["Bookings"],
+        "summary": "Admin Get All Bookings",
+        "operationId": "admin_get_all_bookings_bookings_admin_all_get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "$ref": "#/components/schemas/BookingStatus" },
+                { "type": "null" }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "object", "additionalProperties": true },
+                  "title": "Response Admin Get All Bookings Bookings Admin All Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bookings/admin/{booking_id}/confirm": {
+      "post": {
+        "tags": ["Bookings"],
+        "summary": "Admin Confirm Booking",
+        "operationId": "admin_confirm_booking_bookings_admin__booking_id__confirm_post",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "booking_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Booking Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/payments/initialize": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Initialize Payment",
+        "description": "Initialize payment for a booking.",
+        "operationId": "initialize_payment_payments_initialize_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentInitializeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentInitializeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        },
+        "security": [{ "OAuth2PasswordBearer": [] }]
+      }
+    },
+    "/payments/verify/{payment_reference}": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Verify Payment",
+        "description": "Verify payment status.",
+        "operationId": "verify_payment_payments_verify__payment_reference__post",
+        "parameters": [
+          {
+            "name": "payment_reference",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Payment Reference" }
+          },
+          {
+            "name": "provider",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Payment provider",
+              "default": "paystack",
+              "title": "Provider"
+            },
+            "description": "Payment provider"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentVerificationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/payments/refund/{booking_id}": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Process Refund",
+        "description": "Process refund for a booking.",
+        "operationId": "process_refund_payments_refund__booking_id__post",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "booking_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Booking Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RefundRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RefundResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/payments/methods": {
+      "get": {
+        "tags": ["Payments"],
+        "summary": "Get Payment Methods",
+        "description": "Get available payment methods.",
+        "operationId": "get_payment_methods_payments_methods_get",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Payment provider",
+              "default": "paystack",
+              "title": "Provider"
+            },
+            "description": "Payment provider"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentMethodResponse"
+                  },
+                  "title": "Response Get Payment Methods Payments Methods Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/payments/booking/{booking_id}/total": {
+      "get": {
+        "tags": ["Payments"],
+        "summary": "Calculate Booking Total",
+        "description": "Calculate total amount for a booking including fees.",
+        "operationId": "calculate_booking_total_payments_booking__booking_id__total_get",
+        "parameters": [
+          {
+            "name": "booking_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Booking Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingTotalResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/payments/statistics": {
+      "get": {
+        "tags": ["Payments"],
+        "summary": "Get Payment Statistics",
+        "description": "Get payment statistics (admin only).",
+        "operationId": "get_payment_statistics_payments_statistics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          }
+        },
+        "security": [{ "OAuth2PasswordBearer": [] }]
+      }
+    },
+    "/payments/webhook/paystack": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Paystack Webhook",
+        "description": "Handle Paystack webhook notifications.",
+        "operationId": "paystack_webhook_payments_webhook_paystack_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Request Data"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/payments/webhook/flutterwave": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Flutterwave Webhook",
+        "description": "Handle Flutterwave webhook notifications.",
+        "operationId": "flutterwave_webhook_payments_webhook_flutterwave_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Request Data"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_login_auth_token_post": {
+        "properties": {
+          "grant_type": {
+            "anyOf": [
+              { "type": "string", "pattern": "^password$" },
+              { "type": "null" }
+            ],
+            "title": "Grant Type"
+          },
+          "username": { "type": "string", "title": "Username" },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "title": "Password"
+          },
+          "scope": { "type": "string", "title": "Scope", "default": "" },
+          "client_id": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Client Id"
+          },
+          "client_secret": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "format": "password",
+            "title": "Client Secret"
+          }
+        },
+        "type": "object",
+        "required": ["username", "password"],
+        "title": "Body_login_auth_token_post"
+      },
+      "BookingCreateRequest": {
+        "properties": {
+          "schedule_id": { "type": "string", "title": "Schedule Id" },
+          "passenger_details": {
+            "items": { "$ref": "#/components/schemas/PassengerDetail" },
+            "type": "array",
+            "title": "Passenger Details"
+          },
+          "guest_email": {
+            "anyOf": [
+              { "type": "string", "format": "email" },
+              { "type": "null" }
+            ],
+            "title": "Guest Email"
+          },
+          "guest_phone": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Guest Phone"
+          }
+        },
+        "type": "object",
+        "required": ["schedule_id", "passenger_details"],
+        "title": "BookingCreateRequest"
+      },
+      "BookingResponse": {
+        "properties": {
+          "booking_id": { "type": "string", "title": "Booking Id" },
+          "booking_reference": {
+            "type": "string",
+            "title": "Booking Reference"
+          },
+          "provider_booking_reference": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Provider Booking Reference"
+          },
+          "total_amount": { "type": "number", "title": "Total Amount" },
+          "booking_status": { "type": "string", "title": "Booking Status" },
+          "payment_status": { "type": "string", "title": "Payment Status" },
+          "passenger_count": { "type": "integer", "title": "Passenger Count" },
+          "schedule_details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Schedule Details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "booking_id",
+          "booking_reference",
+          "total_amount",
+          "booking_status",
+          "payment_status",
+          "passenger_count",
+          "schedule_details"
+        ],
+        "title": "BookingResponse"
+      },
+      "BookingStatus": {
+        "type": "string",
+        "enum": ["pending", "confirmed", "cancelled", "completed"],
+        "title": "BookingStatus",
+        "description": "Booking status enumeration."
+      },
+      "BookingTotalResponse": {
+        "properties": {
+          "base_amount": { "type": "number", "title": "Base Amount" },
+          "booking_fee": { "type": "number", "title": "Booking Fee" },
+          "platform_fee": { "type": "number", "title": "Platform Fee" },
+          "insurance_fee": { "type": "number", "title": "Insurance Fee" },
+          "wifi_fee": { "type": "number", "title": "Wifi Fee" },
+          "total_fees": { "type": "number", "title": "Total Fees" },
+          "grand_total": { "type": "number", "title": "Grand Total" },
+          "breakdown": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Breakdown"
+          }
+        },
+        "type": "object",
+        "required": [
+          "base_amount",
+          "booking_fee",
+          "platform_fee",
+          "insurance_fee",
+          "wifi_fee",
+          "total_fees",
+          "grand_total",
+          "breakdown"
+        ],
+        "title": "BookingTotalResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": { "$ref": "#/components/schemas/ValidationError" },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "PassengerDetail": {
+        "properties": {
+          "first_name": { "type": "string", "title": "First Name" },
+          "last_name": { "type": "string", "title": "Last Name" },
+          "phone": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Phone"
+          },
+          "email": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Email"
+          },
+          "id_type": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Id Type"
+          },
+          "id_number": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Id Number"
+          }
+        },
+        "type": "object",
+        "required": ["first_name", "last_name"],
+        "title": "PassengerDetail"
+      },
+      "PasswordReset": {
+        "properties": {
+          "token": { "type": "string", "title": "Token" },
+          "new_password": { "type": "string", "title": "New Password" }
+        },
+        "type": "object",
+        "required": ["token", "new_password"],
+        "title": "PasswordReset"
+      },
+      "PasswordResetRequest": {
+        "properties": {
+          "email": { "type": "string", "format": "email", "title": "Email" }
+        },
+        "type": "object",
+        "required": ["email"],
+        "title": "PasswordResetRequest"
+      },
+      "PaymentInitializeRequest": {
+        "properties": {
+          "booking_id": { "type": "string", "title": "Booking Id" },
+          "payment_method": {
+            "type": "string",
+            "title": "Payment Method",
+            "default": "card"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "default": "paystack"
+          }
+        },
+        "type": "object",
+        "required": ["booking_id"],
+        "title": "PaymentInitializeRequest"
+      },
+      "PaymentInitializeResponse": {
+        "properties": {
+          "payment_reference": {
+            "type": "string",
+            "title": "Payment Reference"
+          },
+          "status": { "type": "string", "title": "Status" },
+          "amount": { "type": "number", "title": "Amount" },
+          "currency": { "type": "string", "title": "Currency" },
+          "payment_method": { "type": "string", "title": "Payment Method" },
+          "provider": { "type": "string", "title": "Provider" },
+          "authorization_url": {
+            "type": "string",
+            "title": "Authorization Url"
+          },
+          "access_code": { "type": "string", "title": "Access Code" },
+          "expires_at": { "type": "number", "title": "Expires At" }
+        },
+        "type": "object",
+        "required": [
+          "payment_reference",
+          "status",
+          "amount",
+          "currency",
+          "payment_method",
+          "provider",
+          "authorization_url",
+          "access_code",
+          "expires_at"
+        ],
+        "title": "PaymentInitializeResponse"
+      },
+      "PaymentMethodResponse": {
+        "properties": {
+          "method": { "type": "string", "title": "Method" },
+          "name": { "type": "string", "title": "Name" },
+          "provider": { "type": "string", "title": "Provider" },
+          "currency": { "type": "string", "title": "Currency" }
+        },
+        "type": "object",
+        "required": ["method", "name", "provider", "currency"],
+        "title": "PaymentMethodResponse"
+      },
+      "PaymentVerificationResponse": {
+        "properties": {
+          "payment_reference": {
+            "type": "string",
+            "title": "Payment Reference"
+          },
+          "status": { "type": "string", "title": "Status" },
+          "amount": { "type": "number", "title": "Amount" },
+          "currency": { "type": "string", "title": "Currency" },
+          "provider": { "type": "string", "title": "Provider" },
+          "transaction_id": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Transaction Id"
+          },
+          "gateway_response": { "type": "string", "title": "Gateway Response" },
+          "paid_at": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Paid At"
+          },
+          "message": { "type": "string", "title": "Message" }
+        },
+        "type": "object",
+        "required": [
+          "payment_reference",
+          "status",
+          "amount",
+          "currency",
+          "provider",
+          "gateway_response",
+          "message"
+        ],
+        "title": "PaymentVerificationResponse"
+      },
+      "RefundRequest": {
+        "properties": {
+          "amount": {
+            "anyOf": [{ "type": "number" }, { "type": "null" }],
+            "title": "Amount"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "default": "Customer request"
+          }
+        },
+        "type": "object",
+        "title": "RefundRequest"
+      },
+      "RefundResponse": {
+        "properties": {
+          "refund_reference": { "type": "string", "title": "Refund Reference" },
+          "status": { "type": "string", "title": "Status" },
+          "amount": { "type": "number", "title": "Amount" },
+          "currency": { "type": "string", "title": "Currency" },
+          "booking_reference": {
+            "type": "string",
+            "title": "Booking Reference"
+          },
+          "reason": { "type": "string", "title": "Reason" },
+          "processed_at": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Processed At"
+          },
+          "message": { "type": "string", "title": "Message" }
+        },
+        "type": "object",
+        "required": [
+          "refund_reference",
+          "status",
+          "amount",
+          "currency",
+          "booking_reference",
+          "reason",
+          "message"
+        ],
+        "title": "RefundResponse"
+      },
+      "Token": {
+        "properties": {
+          "access_token": { "type": "string", "title": "Access Token" },
+          "token_type": { "type": "string", "title": "Token Type" },
+          "expires_in": { "type": "integer", "title": "Expires In" },
+          "user_id": { "type": "string", "title": "User Id" },
+          "user_email": { "type": "string", "title": "User Email" },
+          "user_role": { "type": "string", "title": "User Role" }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "token_type",
+          "expires_in",
+          "user_id",
+          "user_email",
+          "user_role"
+        ],
+        "title": "Token"
+      },
+      "UserBookingResponse": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "booking_reference": {
+            "type": "string",
+            "title": "Booking Reference"
+          },
+          "schedule_id": { "type": "string", "title": "Schedule Id" },
+          "passenger_count": { "type": "integer", "title": "Passenger Count" },
+          "total_amount": { "type": "number", "title": "Total Amount" },
+          "booking_status": { "type": "string", "title": "Booking Status" },
+          "payment_status": { "type": "string", "title": "Payment Status" },
+          "created_at": { "type": "string", "title": "Created At" },
+          "provider_booking_reference": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Provider Booking Reference"
+          },
+          "notes": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "booking_reference",
+          "schedule_id",
+          "passenger_count",
+          "total_amount",
+          "booking_status",
+          "payment_status",
+          "created_at"
+        ],
+        "title": "UserBookingResponse"
+      },
+      "UserInsurancePolicyResponse": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "booking_id": { "type": "string", "title": "Booking Id" },
+          "policy_number": { "type": "string", "title": "Policy Number" },
+          "coverage_details_url": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Coverage Details Url"
+          },
+          "status": { "type": "string", "title": "Status" },
+          "start_date": { "type": "string", "title": "Start Date" },
+          "end_date": { "type": "string", "title": "End Date" },
+          "coverage_amount": { "type": "number", "title": "Coverage Amount" },
+          "created_at": { "type": "string", "title": "Created At" }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "booking_id",
+          "policy_number",
+          "status",
+          "start_date",
+          "end_date",
+          "coverage_amount",
+          "created_at"
+        ],
+        "title": "UserInsurancePolicyResponse"
+      },
+      "UserLogin": {
+        "properties": {
+          "email": { "type": "string", "format": "email", "title": "Email" },
+          "password": { "type": "string", "title": "Password" }
+        },
+        "type": "object",
+        "required": ["email", "password"],
+        "title": "UserLogin"
+      },
+      "UserProfileUpdate": {
+        "properties": {
+          "first_name": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Last Name"
+          },
+          "phone": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Phone"
+          }
+        },
+        "type": "object",
+        "title": "UserProfileUpdate"
+      },
+      "UserRegister": {
+        "properties": {
+          "email": { "type": "string", "format": "email", "title": "Email" },
+          "password": { "type": "string", "title": "Password" },
+          "first_name": { "type": "string", "title": "First Name" },
+          "last_name": { "type": "string", "title": "Last Name" },
+          "phone": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Phone"
+          }
+        },
+        "type": "object",
+        "required": ["email", "password", "first_name", "last_name"],
+        "title": "UserRegister"
+      },
+      "UserResponse": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "email": { "type": "string", "title": "Email" },
+          "first_name": { "type": "string", "title": "First Name" },
+          "last_name": { "type": "string", "title": "Last Name" },
+          "phone": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Phone"
+          },
+          "role": { "type": "string", "title": "Role" },
+          "is_active": { "type": "boolean", "title": "Is Active" },
+          "is_verified": { "type": "boolean", "title": "Is Verified" }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "first_name",
+          "last_name",
+          "role",
+          "is_active",
+          "is_verified"
+        ],
+        "title": "UserResponse"
+      },
+      "UserSearchResponse": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "email": { "type": "string", "title": "Email" },
+          "phone": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Phone"
+          },
+          "first_name": { "type": "string", "title": "First Name" },
+          "last_name": { "type": "string", "title": "Last Name" },
+          "role": { "type": "string", "title": "Role" },
+          "is_active": { "type": "boolean", "title": "Is Active" },
+          "is_verified": { "type": "boolean", "title": "Is Verified" },
+          "created_at": { "type": "string", "title": "Created At" }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "first_name",
+          "last_name",
+          "role",
+          "is_active",
+          "is_verified",
+          "created_at"
+        ],
+        "title": "UserSearchResponse"
+      },
+      "UserWifiCodeResponse": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "booking_id": { "type": "string", "title": "Booking Id" },
+          "code": { "type": "string", "title": "Code" },
+          "qr_code_data": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Qr Code Data"
+          },
+          "expiry_time": { "type": "string", "title": "Expiry Time" },
+          "usage_status": { "type": "string", "title": "Usage Status" },
+          "bandwidth_limit_mb": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Bandwidth Limit Mb"
+          },
+          "created_at": { "type": "string", "title": "Created At" }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "booking_id",
+          "code",
+          "expiry_time",
+          "usage_status",
+          "created_at"
+        ],
+        "title": "UserWifiCodeResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": { "anyOf": [{ "type": "string" }, { "type": "integer" }] },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": { "type": "string", "title": "Message" },
+          "type": { "type": "string", "title": "Error Type" }
+        },
+        "type": "object",
+        "required": ["loc", "msg", "type"],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "type": "oauth2",
+        "flows": { "password": { "scopes": {}, "tokenUrl": "auth/token" } }
+      }
+    }
+  }
+}

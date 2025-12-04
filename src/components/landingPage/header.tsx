@@ -1,18 +1,22 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import { useState } from "react"
-import { ChevronDown, ArrowLeftRight } from "lucide-react"
+import Image from "next/image";
+import { useState } from "react";
+import { ChevronDown, ArrowLeftRight } from "lucide-react";
 
-export default function Header({ onCompareClick }: { onCompareClick?: () => void }) {
-  const [fromCity, setFromCity] = useState("Lagos")
-  const [toCity, setToCity] = useState("Abuja")
+export default function Header({
+  onCompareClick,
+}: {
+  onCompareClick?: () => void;
+}) {
+  const [fromCity, setFromCity] = useState("Lagos");
+  const [toCity, setToCity] = useState("Abuja");
 
   const swapCities = () => {
-    const temp = fromCity
-    setFromCity(toCity)
-    setToCity(temp)
-  }
+    const temp = fromCity;
+    setFromCity(toCity);
+    setToCity(temp);
+  };
 
   return (
     <header className="absolute top-0 left-0 right-0 z-50">
@@ -69,7 +73,7 @@ export default function Header({ onCompareClick }: { onCompareClick?: () => void
               Compare
             </button>
           </div>
-          
+
           {/* Logo - Right Side */}
           <div className="flex items-center space-x-2">
             <div className="w-32 h-28">
@@ -85,5 +89,5 @@ export default function Header({ onCompareClick }: { onCompareClick?: () => void
         </div>
       </div>
     </header>
-  )
+  );
 }
