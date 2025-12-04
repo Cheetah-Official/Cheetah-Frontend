@@ -6,13 +6,14 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { FaApple, FaGoogle, FaEnvelope, FaPhone, FaLock } from "react-icons/fa";
+import { FaApple, FaGoogle, FaFacebookF, FaEnvelope, FaPhone, FaUser, FaHome } from "react-icons/fa";
 import { authApi } from "@/lib/api/endpoints/auth";
-import AuthCard from "@/components/AuthCard";
 
 const SignInSchema = z.object({
-  identifier: z.string().min(1, "Email or phone is required"),
-  password: z.string().min(1, "Password is required"),
+  fullName: z.string().min(1, "Full name is required"),
+  email: z.string().email("Enter a valid email"),
+  phone: z.string().min(1, "Phone number is required"),
+  address: z.string().min(1, "Home address is required"),
 });
 
 type SignInForm = z.infer<typeof SignInSchema>;
@@ -22,62 +23,86 @@ export default function SignInPage() {
   const { register, handleSubmit, formState: { errors } } = useForm<SignInForm>({ resolver: zodResolver(SignInSchema) });
 
   const mutation = useMutation({
-    mutationFn: (payload: SignInForm) => authApi.tokenLogin({ username: payload.identifier, password: payload.password }),
+    mutationFn: (payload: SignInForm) => {
+      // Use email or phone as identifier for login
+      const identifier = payload.email || payload.phone;
+      return authApi.tokenLogin({ username: identifier, password: "" });
+    },
     onSuccess: () => router.push("/dashboard"),
   });
 
   const onSubmit = (data: SignInForm) => mutation.mutate(data);
 
   return (
-    <AuthCard
-      title="Sign In"
-      subtitle="Welcome back! Sign in to access your account."
-      footer={<>
-        Don't have an account?{' '}
-        <Link href="/signup" className="text-[#8B2323] font-semibold hover:underline cursor-pointer">Sign Up</Link>
-      </>}
-      socialButtons={
-        <>
-          <button className="border border-[#8B2323] text-[#8B2323] rounded-full p-2.5 hover:bg-[#8B2323]/10 transition-colors cursor-pointer">
-            <FaApple className="w-5 h-5" />
-          </button>
-          <button className="border border-[#8B2323] text-[#8B2323] rounded-full p-2.5 hover:bg-[#8B2323]/10 transition-colors cursor-pointer">
-            <FaGoogle className="w-5 h-5" />
-          </button>
-        </>
-      }
-    >
+    <div className="min-h-screen flex items-center justify-center bg-[#0A2384] p-4">
+      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-xs flex flex-col items-center">
+        <div className="mb-4 flex flex-col items-center">
+          <img src="/Logo.png" alt="Cheetah Logo" className="h-10 mb-2" />
+          <h2 className="text-2xl font-bold mb-1 text-[#1A1A1A]">Sign In Account</h2>
+          <p className="text-gray-600 text-center text-sm max-w-xs mb-2">
+            Welcome back! Sign in to access your account and manage your bookings.
+          </p>
+        </div>
         <form className="w-full" onSubmit={handleSubmit(onSubmit)} autoComplete="on">
-          <div className="mb-2">
-            <div className="flex items-center mb-0.5">
-              <FaEnvelope className="text-gray-400 w-4 h-4 mr-1" />
-              <FaPhone className="text-gray-400 w-4 h-4 mr-1" />
-              <label className="font-bold text-black text-sm" htmlFor="identifier">Email or Phone Number</label>
+          <div className="mb-3">
+            <div className="flex items-center mb-1">
+              <FaUser className="text-gray-400 w-4 h-4 mr-2" />
+              <label className="font-bold text-black text-sm" htmlFor="fullName">Full Name</label>
             </div>
             <input
-              id="identifier"
+              id="fullName"
               type="text"
-              placeholder="Email or Phone Number"
-              className="w-full px-4 py-2 text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#800000] focus:outline-none text-sm"
-              autoComplete="username"
-              {...register("identifier")}
+              placeholder="Full Name"
+              className="w-full px-4 py-2.5 bg-white text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] focus:outline-none text-sm"
+              autoComplete="name"
+              {...register("fullName")}
             />
-            {errors.identifier && <p className="text-red-600 text-xs mt-1">{errors.identifier.message}</p>}
+            {errors.fullName && <p className="text-red-600 text-xs mt-1">{errors.fullName.message}</p>}
           </div>
-          <div className="mb-2">
-            <div className="flex items-center mb-0.5">
-              <FaLock className="text-gray-400 w-4 h-4 mr-1" />
-              <label className="font-bold text-black text-sm" htmlFor="password">Password</label>
+          <div className="mb-3">
+            <div className="flex items-center mb-1">
+              <FaEnvelope className="text-gray-400 w-4 h-4 mr-2" />
+              <label className="font-bold text-black text-sm" htmlFor="email">Email</label>
             </div>
             <input
-              id="password"
-              type="password"
-              placeholder="Password"
-              className="w-full px-4 py-2 text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#800000] focus:outline-none text-sm"
-              autoComplete="current-password"
-              {...register("password")}
+              id="email"
+              type="email"
+              placeholder="Email"
+              className="w-full px-4 py-2.5 bg-white text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] focus:outline-none text-sm"
+              autoComplete="email"
+              {...register("email")}
             />
-            {errors.password && <p className="text-red-600 text-xs mt-1">{errors.password.message}</p>}
+            {errors.email && <p className="text-red-600 text-xs mt-1">{errors.email.message}</p>}
+          </div>
+          <div className="mb-3">
+            <div className="flex items-center mb-1">
+              <FaPhone className="text-gray-400 w-4 h-4 mr-2" />
+              <label className="font-bold text-black text-sm" htmlFor="phone">Phone Number</label>
+            </div>
+            <input
+              id="phone"
+              type="text"
+              placeholder="Phone Number"
+              className="w-full px-4 py-2.5 bg-white text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] focus:outline-none text-sm"
+              autoComplete="tel"
+              {...register("phone")}
+            />
+            {errors.phone && <p className="text-red-600 text-xs mt-1">{errors.phone.message}</p>}
+          </div>
+          <div className="mb-3">
+            <div className="flex items-center mb-1">
+              <FaHome className="text-gray-400 w-4 h-4 mr-2" />
+              <label className="font-bold text-black text-sm" htmlFor="address">Home Address</label>
+            </div>
+            <input
+              id="address"
+              type="text"
+              placeholder="Home Address"
+              className="w-full px-4 py-2.5 bg-white text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] focus:outline-none text-sm"
+              autoComplete="street-address"
+              {...register("address")}
+            />
+            {errors.address && <p className="text-red-600 text-xs mt-1">{errors.address.message}</p>}
           </div>
           {mutation.isError && (
             <div className="text-red-600 text-xs mb-2" role="alert">{(mutation.error as any)?.message || "Failed to sign in"}</div>
@@ -85,11 +110,41 @@ export default function SignInPage() {
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="w-full bg-[#8B2323] text-white py-2.5 rounded-lg font-semibold transition-all duration-200 hover:opacity-90 mb-1 cursor-pointer disabled:opacity-60"
+            className="w-full bg-[#8B2323] text-white py-3 rounded-lg font-semibold transition-all duration-200 hover:opacity-90 mb-2 cursor-pointer disabled:opacity-60"
           >
             {mutation.isPending ? "Signing In..." : "Sign In"}
           </button>
         </form>
-    </AuthCard>
+        <div className="text-sm text-gray-600 mt-1 mb-2 text-center">
+          Don't have an account?{' '}
+          <Link href="/signup" className="text-[#8B2323] font-semibold hover:underline cursor-pointer">Sign Up</Link>
+        </div>
+        <div className="flex items-center w-full my-2">
+          <div className="flex-grow h-px bg-gray-200" />
+          <span className="mx-2 text-gray-400 text-xs">or continue with</span>
+          <div className="flex-grow h-px bg-gray-200" />
+        </div>
+        <div className="flex justify-center gap-4 w-full mt-1 mb-2">
+          <button 
+            className="bg-white border border-[#8B2323] text-[#8B2323] rounded-full p-2.5 hover:bg-[#8B2323]/5 transition-colors cursor-pointer"
+            aria-label="Sign in with Apple"
+          >
+            <FaApple className="w-5 h-5" />
+          </button>
+          <button 
+            className="bg-white border border-[#8B2323] text-[#8B2323] rounded-full p-2.5 hover:bg-[#8B2323]/5 transition-colors cursor-pointer"
+            aria-label="Sign in with Google"
+          >
+            <FaGoogle className="w-5 h-5" />
+          </button>
+          <button 
+            className="bg-white border border-[#8B2323] text-[#8B2323] rounded-full p-2.5 hover:bg-[#8B2323]/5 transition-colors cursor-pointer"
+            aria-label="Sign in with Facebook"
+          >
+            <FaFacebookF className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

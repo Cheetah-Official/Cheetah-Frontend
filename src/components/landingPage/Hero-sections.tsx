@@ -139,10 +139,7 @@ export default function HeroSection() {
               </h1>
               <p className="text-lg md:text-xl text-white/90 max-w-lg">
               Discover a seamless way to book intercity buses and trains across multiple providers — all in one place.              </p>
-              <button className="bg-[#800000] hover:bg-red-700 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 flex items-center space-x-2 cursor-pointer">
-                <Download className="w-5 h-5" />
-                <span>Download Now</span>
-              </button>
+              
             </div>
 
             {/* Right Content - Booking Form */}

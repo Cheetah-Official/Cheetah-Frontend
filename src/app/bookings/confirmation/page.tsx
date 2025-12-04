@@ -2,11 +2,11 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { paymentsApi } from "@/lib/api/endpoints/payments";
 
-export default function BookingConfirmationPage() {
+function BookingConfirmationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -164,5 +164,19 @@ export default function BookingConfirmationPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function BookingConfirmationPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#F6F6F6] flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 max-w-xl w-full text-center">
+          <div className="text-xl font-semibold text-[#8B2323]">Loading...</div>
+        </div>
+      </div>
+    }>
+      <BookingConfirmationContent />
+    </Suspense>
   );
 }

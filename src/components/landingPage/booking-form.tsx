@@ -32,7 +32,7 @@ const transportOptions = [
 export type CompareModalProps = {
   open: boolean;
   onClose: () => void;
-  onSelect: (option: typeof transportOptions[0]) => void;
+  onSelect: (option: { name: string; logo: string; price?: string; route?: string }) => void;
 };
 
 export function CompareModal({ open, onClose, onSelect }: CompareModalProps) {
@@ -275,6 +275,7 @@ export default function BookingForm({ onCompareClick }: { onCompareClick?: () =>
               value={formData.departure}
               onChange={(e) => setFormData({ ...formData, departure: e.target.value })}
               className="w-full px-3 py-3 rounded-lg bg-white text-gray-900 text-sm border border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323]"
+              aria-label="Departure Date"
             />
           </div>
           <div className="space-y-1">
@@ -288,6 +289,7 @@ export default function BookingForm({ onCompareClick }: { onCompareClick?: () =>
               onChange={(e) => setFormData({ ...formData, return: e.target.value })}
               className="w-full px-3 py-3 rounded-lg bg-white text-gray-900 text-sm border border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] disabled:bg-gray-100 disabled:text-gray-400"
               disabled={tripType === "one-way"}
+              aria-label="Return Date"
             />
           </div>
         </div>

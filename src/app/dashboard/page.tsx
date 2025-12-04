@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { FaBus, FaBell, FaCog, FaSignOutAlt, FaChevronRight, FaChevronLeft, FaUser, FaWifi, FaCheckCircle, FaExclamationTriangle, FaDownload, FaBars, FaTimes, FaEnvelope, FaPhone, FaHome } from "react-icons/fa"
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { bookingsApi } from "@/lib/api/endpoints/bookings"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -15,7 +15,7 @@ const companies = [
   { name: "Chisco", logo: "/CHISCO.png" },
 ]
 
-export default function DashboardPage() {
+function DashboardContent() {
   const [from, setFrom] = useState("")
   const [to, setTo] = useState("")
   const [departure, setDeparture] = useState("")
@@ -156,6 +156,7 @@ export default function DashboardPage() {
             <button 
               className="md:hidden p-2 rounded-lg hover:bg-gray-100"
               onClick={() => setMobileMenuOpen(false)}
+              aria-label="Close menu"
             >
               <FaTimes className="text-gray-600 w-5 h-5" />
             </button>
@@ -217,6 +218,7 @@ export default function DashboardPage() {
           <button 
             className="p-2 rounded-lg hover:bg-gray-100"
             onClick={() => setMobileMenuOpen(true)}
+            aria-label="Open menu"
           >
             <FaBars className="text-gray-600 w-5 h-5" />
           </button>
@@ -241,7 +243,7 @@ export default function DashboardPage() {
             <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
               <div className="flex flex-col sm:flex-row items-start gap-2 w-full sm:w-auto">
                 <span className="text-gray-500 text-xs sm:text-sm md:text-base">From</span>
-                <select value={from} onChange={e => setFrom(e.target.value)} className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] cursor-pointer w-full sm:w-auto text-sm sm:text-base">
+                <select value={from} onChange={e => setFrom(e.target.value)} className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] cursor-pointer w-full sm:w-auto text-sm sm:text-base" aria-label="Departure city">
                   <option value="">Select City</option>
                   <option value="Lagos">Lagos</option>
                   <option value="Abuja">Abuja</option>
@@ -251,7 +253,7 @@ export default function DashboardPage() {
               <FaChevronRight className="text-gray-400 mx-2 hidden sm:block" />
               <div className="flex flex-col sm:flex-row items-start gap-2 w-full sm:w-auto">
                 <span className="text-gray-500 text-xs sm:text-sm md:text-base">To</span>
-                <select value={to} onChange={e => setTo(e.target.value)} className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] cursor-pointer w-full sm:w-auto text-sm sm:text-base">
+                <select value={to} onChange={e => setTo(e.target.value)} className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] cursor-pointer w-full sm:w-auto text-sm sm:text-base" aria-label="Destination city">
                   <option value="">Select City</option>
                   <option value="Lagos">Lagos</option>
                   <option value="Abuja">Abuja</option>
@@ -264,7 +266,8 @@ export default function DashboardPage() {
                   type="date" 
                   value={departure}
                   onChange={(e) => setDeparture(e.target.value)}
-                  className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] w-full sm:w-28 md:w-32 font-medium text-sm sm:text-base" 
+                  className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] w-full sm:w-28 md:w-32 font-medium text-sm sm:text-base"
+                  aria-label="Departure Date"
                 />
               </div>
               <div className="flex flex-col sm:flex-row items-start gap-2 w-full sm:w-auto sm:ml-4">
@@ -273,7 +276,8 @@ export default function DashboardPage() {
                   type="date" 
                   value={returnDate}
                   onChange={(e) => setReturnDate(e.target.value)}
-                  className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] w-full sm:w-28 md:w-32 font-medium text-sm sm:text-base" 
+                  className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] w-full sm:w-28 md:w-32 font-medium text-sm sm:text-base"
+                  aria-label="Return Date"
                 />
               </div>
             </div>
@@ -577,5 +581,19 @@ export default function DashboardPage() {
         )}
       </main>
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#F9F9F9]">
+        <div className="text-center">
+          <div className="text-xl font-semibold text-[#8B2323]">Loading Dashboard...</div>
+        </div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   )
 } 

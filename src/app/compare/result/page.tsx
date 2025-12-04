@@ -1,13 +1,13 @@
 "use client"
 
 import Image from "next/image"
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { FaTimes } from "react-icons/fa"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import { bookingsApi } from "@/lib/api/endpoints/bookings"
 
-export default function CompareResult() {
+function CompareResultContent() {
   const [passengers, setPassengers] = useState(1)
   const [departureDate, setDepartureDate] = useState("")
   const [returnDate, setReturnDate] = useState("")
@@ -92,6 +92,7 @@ export default function CompareResult() {
           <button
             className="bg-white rounded-full shadow p-2 cursor-pointer hover:bg-gray-50 transition-colors"
             onClick={() => router.push('/')}
+            aria-label="Close and return to home"
           >
             <FaTimes className="w-5 h-5 text-gray-500" />
           </button>
@@ -126,6 +127,7 @@ export default function CompareResult() {
                   value={departureDate}
                   onChange={(e) => setDepartureDate(e.target.value)}
                   className="px-4 py-2 rounded-lg border text-gray-700 bg-white focus:outline-none w-36 font-medium"
+                  aria-label="Departure Date"
                 />
               </div>
               <div className="flex flex-col">
@@ -135,6 +137,7 @@ export default function CompareResult() {
                   value={returnDate}
                   onChange={(e) => setReturnDate(e.target.value)}
                   className="px-4 py-2 rounded-lg border text-gray-700 bg-white focus:outline-none w-36 font-medium"
+                  aria-label="Return Date"
                 />
               </div>
             </div>
@@ -281,5 +284,25 @@ export default function CompareResult() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CompareResult() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: "url('/Hero-1.jpeg')", filter: 'blur(8px)' }} />
+          <div className="absolute inset-0 bg-black/30" />
+        </div>
+        <div className="relative z-10 flex items-center justify-center">
+          <div className="bg-white rounded-xl shadow-xl p-8 text-center">
+            <div className="text-xl font-semibold text-[#8B2323]">Loading...</div>
+          </div>
+        </div>
+      </div>
+    }>
+      <CompareResultContent />
+    </Suspense>
   )
 } 
