@@ -5,9 +5,11 @@ Use this document as the initial instruction/system prompt for your Windsurf ses
 ---
 
 ## Title
+
 Build a production-grade Next.js frontend for Cheetah (FastAPI backend) with strong architecture and standards
 
 ## Context
+
 - Backend base: FastAPI
 - Base URL: read from env `NEXT_PUBLIC_API_BASE_URL` (e.g., `http://localhost:8000`)
 - Namespaces and prefixes (from `app/main.py`):
@@ -20,6 +22,7 @@ Build a production-grade Next.js frontend for Cheetah (FastAPI backend) with str
   - User booking history and admin bookings management
 
 ## High-level goals
+
 - Use Next.js App Router (Next 14+), TypeScript strict, and server components by default.
 - Strong, scalable file structure; code standards enforced via ESLint/Prettier and CI.
 - Centralized API client and schema validation with Zod; no `fetch` calls directly from components.
@@ -27,6 +30,7 @@ Build a production-grade Next.js frontend for Cheetah (FastAPI backend) with str
 - Client data management with React Query. Prefer RSC fetch for read-only pages when suitable.
 
 ## Technology and standards
+
 - TypeScript strict
 - Tailwind CSS + shadcn/ui
 - React Query (TanStack Query)
@@ -37,6 +41,7 @@ Build a production-grade Next.js frontend for Cheetah (FastAPI backend) with str
 - Basic GitHub Actions CI
 
 ## Project structure
+
 ```
 app/
   (main)/
@@ -89,6 +94,7 @@ public/
 ```
 
 ## Environment variables (.env.example)
+
 ```
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 NEXT_PUBLIC_APP_NAME=Cheetah
@@ -97,6 +103,7 @@ NEXT_PUBLIC_APP_NAME=Cheetah
 ## API surface (tailored to backend)
 
 ### Bookings (`/bookings`)
+
 - `GET /bookings/search`
   - Query: `origin`, `destination`, `date` (ISO)
   - Optional query: `max_price`, `min_price`, `departure_after`, `departure_before`, `providers` (csv), `vehicle_types` (csv), `sort_by`, `include_comparison`
@@ -139,6 +146,7 @@ NEXT_PUBLIC_APP_NAME=Cheetah
   - Response: `Record<string, any>`
 
 #### Admin (`/bookings`)
+
 - `GET /bookings/admin/all`
   - Query: `limit`, `offset`, `status?`
   - Response: `Record<string, any>[]`
@@ -147,6 +155,7 @@ NEXT_PUBLIC_APP_NAME=Cheetah
   - Response: `{ message: string }`
 
 ### Payments (`/payments`)
+
 - `POST /payments/initialize`
   - Body `PaymentInitializeRequest`:
     - `booking_id: string`
@@ -178,9 +187,11 @@ NEXT_PUBLIC_APP_NAME=Cheetah
 ## Client and schemas (implement in `lib/`)
 
 ### `lib/config.ts`
+
 - Read `NEXT_PUBLIC_API_BASE_URL` using Zod; throw in dev if missing.
 
 ### `lib/api/client.ts`
+
 - Small fetch wrapper:
   - Base URL from env
   - Normalize errors to `{ status, message, details? }`
@@ -188,6 +199,7 @@ NEXT_PUBLIC_APP_NAME=Cheetah
   - Helpers: `get`, `post`, `put`, `del` with generics
 
 ### `lib/api/schemas/bookings.ts`
+
 ```ts
 import { z } from "zod";
 
@@ -241,6 +253,7 @@ export type BookingResponseT = z.infer<typeof BookingResponse>;
 ```
 
 ### `lib/api/schemas/payments.ts`
+
 ```ts
 import { z } from "zod";
 
@@ -301,15 +314,22 @@ export const BookingTotalResponse = z.object({
   breakdown: z.record(z.any()),
 });
 
-export type PaymentInitializeRequestT = z.infer<typeof PaymentInitializeRequest>;
-export type PaymentInitializeResponseT = z.infer<typeof PaymentInitializeResponse>;
-export type PaymentVerificationResponseT = z.infer<typeof PaymentVerificationResponse>;
+export type PaymentInitializeRequestT = z.infer<
+  typeof PaymentInitializeRequest
+>;
+export type PaymentInitializeResponseT = z.infer<
+  typeof PaymentInitializeResponse
+>;
+export type PaymentVerificationResponseT = z.infer<
+  typeof PaymentVerificationResponse
+>;
 export type RefundRequestT = z.infer<typeof RefundRequest>;
 export type RefundResponseT = z.infer<typeof RefundResponse>;
 export type BookingTotalResponseT = z.infer<typeof BookingTotalResponse>;
 ```
 
 ### `lib/api/endpoints/bookings.ts`
+
 ```ts
 import { z } from "zod";
 import { client } from "../client";
@@ -337,7 +357,7 @@ export const bookingsApi = {
   async search(params: z.infer<typeof SearchQuery>) {
     return client.get<{ routes: z.infer<typeof RouteSearchResponse>[] }>(
       "/bookings/search",
-      { params }
+      { params },
     );
   },
   async scheduleDetails(scheduleId: string) {
@@ -350,17 +370,32 @@ export const bookingsApi = {
   async get(bookingId: string) {
     return client.get<Record<string, any>>(`/bookings/${bookingId}`);
   },
-  async userBookings(params?: { limit?: number; offset?: number; status?: string }) {
-    return client.get<Record<string, any>[]>(`/bookings/user/bookings`, { params });
+  async userBookings(params?: {
+    limit?: number;
+    offset?: number;
+    status?: string;
+  }) {
+    return client.get<Record<string, any>[]>(`/bookings/user/bookings`, {
+      params,
+    });
   },
   async cancel(bookingId: string) {
-    return client.post<{ message: string }>(`/bookings/${bookingId}/cancel`, {});
+    return client.post<{ message: string }>(
+      `/bookings/${bookingId}/cancel`,
+      {},
+    );
   },
   async byReference(reference: string) {
     return client.get<Record<string, any>>(`/bookings/reference/${reference}`);
   },
-  async priceComparison(params: { origin: string; destination: string; date: string }) {
-    return client.get<Record<string, any>>(`/bookings/price-comparison`, { params });
+  async priceComparison(params: {
+    origin: string;
+    destination: string;
+    date: string;
+  }) {
+    return client.get<Record<string, any>>(`/bookings/price-comparison`, {
+      params,
+    });
   },
   async providerStats() {
     return client.get<Record<string, any>>(`/bookings/providers/statistics`);
@@ -369,16 +404,24 @@ export const bookingsApi = {
     return client.get<Record<string, any>>(`/bookings/statistics`);
   },
   // Admin
-  async adminAll(params?: { limit?: number; offset?: number; status?: string }) {
+  async adminAll(params?: {
+    limit?: number;
+    offset?: number;
+    status?: string;
+  }) {
     return client.get<Record<string, any>[]>(`/bookings/admin/all`, { params });
   },
   async adminConfirm(bookingId: string) {
-    return client.post<{ message: string }>(`/bookings/admin/${bookingId}/confirm`, {});
+    return client.post<{ message: string }>(
+      `/bookings/admin/${bookingId}/confirm`,
+      {},
+    );
   },
 };
 ```
 
 ### `lib/api/endpoints/payments.ts`
+
 ```ts
 import { z } from "zod";
 import { client } from "../client";
@@ -394,27 +437,34 @@ import {
 export const paymentsApi = {
   async initialize(body: z.infer<typeof PaymentInitializeRequest>) {
     const payload = PaymentInitializeRequest.parse(body);
-    return client.post<z.infer<typeof PaymentInitializeResponse>>("/payments/initialize", payload);
+    return client.post<z.infer<typeof PaymentInitializeResponse>>(
+      "/payments/initialize",
+      payload,
+    );
   },
   async verify(payment_reference: string, provider = "paystack") {
     return client.post<z.infer<typeof PaymentVerificationResponse>>(
       `/payments/verify/${payment_reference}`,
       {},
-      { params: { provider } }
+      { params: { provider } },
     );
   },
   async refund(bookingId: string, body: z.infer<typeof RefundRequest>) {
     const payload = RefundRequest.parse(body);
-    return client.post<z.infer<typeof RefundResponse>>(`/payments/refund/${bookingId}`, payload);
-  },
-  async methods(provider = "paystack") {
-    return client.get<{ method: string; name: string; provider: string; currency: string }[]>(
-      "/payments/methods",
-      { params: { provider } }
+    return client.post<z.infer<typeof RefundResponse>>(
+      `/payments/refund/${bookingId}`,
+      payload,
     );
   },
+  async methods(provider = "paystack") {
+    return client.get<
+      { method: string; name: string; provider: string; currency: string }[]
+    >("/payments/methods", { params: { provider } });
+  },
   async bookingTotal(bookingId: string) {
-    return client.get<z.infer<typeof BookingTotalResponse>>(`/payments/booking/${bookingId}/total`);
+    return client.get<z.infer<typeof BookingTotalResponse>>(
+      `/payments/booking/${bookingId}/total`,
+    );
   },
   async stats() {
     return client.get<Record<string, any>>(`/payments/statistics`);
@@ -439,6 +489,7 @@ export const paymentsApi = {
 ---
 
 This prompt reflects the current backend surface in:
+
 - `app/main.py` (router prefixes)
 - `app/routers/bookings.py` (booking endpoints and shapes)
 - `app/routers/payments.py` (payment endpoints and shapes)

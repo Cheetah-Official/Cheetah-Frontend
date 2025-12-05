@@ -22,7 +22,11 @@ function withQuery(url: string, params?: Record<string, any>) {
   return qs ? `${url}?${qs}` : url;
 }
 
-async function request<T>(method: HttpMethod, path: string, options: RequestOptions = {}): Promise<T> {
+async function request<T>(
+  method: HttpMethod,
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
   const base = CONFIG.API_BASE_URL || "";
   const url = withQuery(`${base}${path}`, options.params);
 
@@ -43,8 +47,8 @@ async function request<T>(method: HttpMethod, path: string, options: RequestOpti
       options.body === undefined
         ? undefined
         : typeof options.body === "string"
-        ? options.body
-        : JSON.stringify(options.body),
+          ? options.body
+          : JSON.stringify(options.body),
     // Only include browser credentials (cookies) when we actually have a token.
     // This avoids backends that attempt to validate empty/invalid cookies from failing guest flows.
     credentials: token ? "include" : "omit",
@@ -57,7 +61,8 @@ async function request<T>(method: HttpMethod, path: string, options: RequestOpti
   if (!resp.ok) {
     const err = {
       status: resp.status,
-      message: (isJson && data && (data.message || data.detail)) || resp.statusText,
+      message:
+        (isJson && data && (data.message || data.detail)) || resp.statusText,
       details: isJson ? data : undefined,
     } as { status: number; message: string; details?: any };
     throw err;
@@ -67,10 +72,18 @@ async function request<T>(method: HttpMethod, path: string, options: RequestOpti
 }
 
 export const client = {
-  get: <T>(path: string, opts?: RequestOptions) => request<T>("GET", path, opts),
-  post: <T>(path: string, body?: any, opts?: Omit<RequestOptions, "body"> & { body?: any }) =>
-    request<T>("POST", path, { ...(opts || {}), body }),
-  put: <T>(path: string, body?: any, opts?: Omit<RequestOptions, "body"> & { body?: any }) =>
-    request<T>("PUT", path, { ...(opts || {}), body }),
-  del: <T>(path: string, opts?: RequestOptions) => request<T>("DELETE", path, opts),
+  get: <T>(path: string, opts?: RequestOptions) =>
+    request<T>("GET", path, opts),
+  post: <T>(
+    path: string,
+    body?: any,
+    opts?: Omit<RequestOptions, "body"> & { body?: any },
+  ) => request<T>("POST", path, { ...(opts || {}), body }),
+  put: <T>(
+    path: string,
+    body?: any,
+    opts?: Omit<RequestOptions, "body"> & { body?: any },
+  ) => request<T>("PUT", path, { ...(opts || {}), body }),
+  del: <T>(path: string, opts?: RequestOptions) =>
+    request<T>("DELETE", path, opts),
 };

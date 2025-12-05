@@ -7,7 +7,10 @@ import { paymentsApi } from "@/lib/api/endpoints/payments";
 function PaymentVerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const paymentRef = searchParams.get("payment_reference") || searchParams.get("reference") || searchParams.get("ref");
+  const paymentRef =
+    searchParams.get("payment_reference") ||
+    searchParams.get("reference") ||
+    searchParams.get("ref");
   const provider = searchParams.get("provider") || "paystack";
 
   const [status, setStatus] = useState<string>("verifying");
@@ -23,7 +26,10 @@ function PaymentVerifyContent() {
       try {
         setStatus("verifying");
         const res = await paymentsApi.verifyPayment(paymentRef, provider);
-        if ((res?.status || "").toLowerCase() === "success" || (res?.message || "").toLowerCase().includes("success")) {
+        if (
+          (res?.status || "").toLowerCase() === "success" ||
+          (res?.message || "").toLowerCase().includes("success")
+        ) {
           setStatus("success");
           setMessage("Payment verified successfully");
         } else {
@@ -43,10 +49,20 @@ function PaymentVerifyContent() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F6F6F6] p-6">
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center">
-        <div className="text-2xl font-bold text-[#8B2323] mb-2">Payment Verification</div>
-        <div className="text-gray-600 mb-6">We are confirming your payment. Please wait…</div>
-        <div className={`text-sm font-semibold ${status === 'success' ? 'text-green-600' : status === 'verifying' ? 'text-gray-600' : 'text-red-600'}`}>{message || status}</div>
-        <div className="mt-6 text-xs text-gray-500">You will be redirected to your dashboard shortly.</div>
+        <div className="text-2xl font-bold text-[#8B2323] mb-2">
+          Payment Verification
+        </div>
+        <div className="text-gray-600 mb-6">
+          We are confirming your payment. Please wait…
+        </div>
+        <div
+          className={`text-sm font-semibold ${status === "success" ? "text-green-600" : status === "verifying" ? "text-gray-600" : "text-red-600"}`}
+        >
+          {message || status}
+        </div>
+        <div className="mt-6 text-xs text-gray-500">
+          You will be redirected to your dashboard shortly.
+        </div>
       </div>
     </div>
   );

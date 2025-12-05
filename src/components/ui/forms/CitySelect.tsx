@@ -1,15 +1,15 @@
-import { ChevronDown } from "lucide-react"
-import { ChangeEvent, ReactNode } from "react"
+import { ChevronDown } from "lucide-react";
+import { ChangeEvent, ReactNode } from "react";
 
 interface CitySelectProps {
-  value: string
-  onChange: (value: string) => void
-  options: { value: string; label: string }[]
-  className?: string
-  id?: string
-  name?: string
-  disabled?: boolean
-  placeholder?: string
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  className?: string;
+  id?: string;
+  name?: string;
+  disabled?: boolean;
+  placeholder?: string;
 }
 
 export function CitySelect({
@@ -23,8 +23,8 @@ export function CitySelect({
   placeholder = "Select city",
 }: CitySelectProps) {
   const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    onChange(e.target.value)
-  }
+    onChange(e.target.value);
+  };
 
   return (
     <div className={`relative ${className}`}>
@@ -51,7 +51,7 @@ export function CitySelect({
       </select>
       <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-600 pointer-events-none" />
     </div>
-  )
+  );
 }
 
-export default CitySelect
+export default CitySelect;

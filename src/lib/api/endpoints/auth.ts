@@ -22,14 +22,20 @@ export const authApi = {
   },
 
   // OAuth2 password flow: POST /auth/token (form-urlencoded) -> Token
-  async tokenLogin({ username, password }: { username: string; password: string }) {
+  async tokenLogin({
+    username,
+    password,
+  }: {
+    username: string;
+    password: string;
+  }) {
     const form = new URLSearchParams();
     form.append("username", username);
     form.append("password", password);
     const token = await client.post<z.infer<typeof Token>>(
       "/auth/token",
       form.toString(),
-      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+      { headers: { "Content-Type": "application/x-www-form-urlencoded" } },
     );
     setAccessToken(token.access_token);
     return token;
@@ -38,7 +44,10 @@ export const authApi = {
   // POST /auth/register -> UserResponse
   async register(payload: z.infer<typeof UserRegister>) {
     const body = UserRegister.parse(payload);
-    const user = await client.post<z.infer<typeof UserResponse>>("/auth/register", body);
+    const user = await client.post<z.infer<typeof UserResponse>>(
+      "/auth/register",
+      body,
+    );
     return user;
   },
 
@@ -57,7 +66,10 @@ export const authApi = {
   // POST /auth/password-reset-request
   async passwordResetRequest(payload: z.infer<typeof PasswordResetRequest>) {
     const body = PasswordResetRequest.parse(payload);
-    return client.post<{ message: string }>("/auth/password-reset-request", body);
+    return client.post<{ message: string }>(
+      "/auth/password-reset-request",
+      body,
+    );
   },
 
   // POST /auth/password-reset
@@ -69,6 +81,9 @@ export const authApi = {
   // POST /auth/verify-token
   async verifyToken(payload: z.infer<typeof VerifyTokenRequest>) {
     const body = VerifyTokenRequest.parse(payload);
-    return client.post<{ valid: boolean; message?: string }>("/auth/verify-token", body);
+    return client.post<{ valid: boolean; message?: string }>(
+      "/auth/verify-token",
+      body,
+    );
   },
 };
