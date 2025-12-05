@@ -32,7 +32,7 @@ const transportOptions = [
 export type CompareModalProps = {
   open: boolean;
   onClose: () => void;
-  onSelect: (option: (typeof transportOptions)[0]) => void;
+  onSelect: (option: { name: string; logo: string; price?: string; route?: string }) => void;
 };
 
 export function CompareModal({ open, onClose, onSelect }: CompareModalProps) {
