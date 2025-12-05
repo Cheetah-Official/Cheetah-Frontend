@@ -107,7 +107,7 @@ export default function SignupPage() {
               type="text"
               {...register("fullName")}
               placeholder="Full Name"
-              className="w-full px-3 text-black py-1.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#800000] focus:outline-none text-sm"
+              className="w-full px-4 py-2.5 bg-white text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] focus:outline-none text-sm"
               required
               autoComplete="name"
             />
@@ -129,7 +129,7 @@ export default function SignupPage() {
               type="email"
               {...register("email")}
               placeholder="Email"
-              className="w-full px-3 py-1.5 text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#800000] focus:outline-none text-sm"
+              className="w-full px-4 py-2.5 bg-white text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] focus:outline-none text-sm"
               required
               autoComplete="email"
             />
@@ -151,7 +151,7 @@ export default function SignupPage() {
               type="text"
               {...register("phone")}
               placeholder="Phone Number"
-              className="w-full px-3 py-1.5 text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#800000] focus:outline-none text-sm"
+              className="w-full px-4 py-2.5 bg-white text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] focus:outline-none text-sm"
               autoComplete="tel"
             />
           </div>
@@ -167,7 +167,7 @@ export default function SignupPage() {
               type="text"
               {...register("address")}
               placeholder="Home Address"
-              className="w-full px-3 py-1.5 text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#800000] focus:outline-none text-sm"
+              className="w-full px-4 py-2.5 bg-white text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] focus:outline-none text-sm"
               autoComplete="street-address"
             />
           </div>
@@ -186,7 +186,7 @@ export default function SignupPage() {
               type="password"
               {...register("password")}
               placeholder="Create Password"
-              className="w-full px-3 py-1.5 text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#800000] focus:outline-none text-sm"
+              className="w-full px-4 py-2.5 bg-white text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] focus:outline-none text-sm"
               required
               autoComplete="new-password"
             />
@@ -211,7 +211,7 @@ export default function SignupPage() {
               type="password"
               {...register("confirmPassword")}
               placeholder="Confirm Password"
-              className="w-full px-3 py-1.5 text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#800000] focus:outline-none text-sm"
+              className="w-full px-4 py-2.5 bg-white text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] focus:outline-none text-sm"
               required
               autoComplete="new-password"
             />
@@ -229,7 +229,7 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="w-full bg-[#8B2323] text-white py-2 rounded-lg font-semibold transition-all duration-200 hover:opacity-90 mb-1 cursor-pointer disabled:opacity-60"
+            className="w-full bg-[#8B2323] text-white py-3 rounded-lg font-semibold transition-all duration-200 hover:opacity-90 mb-2 cursor-pointer disabled:opacity-60"
           >
             {mutation.isPending ? "Creating Account..." : "Sign Up"}
           </button>
@@ -243,16 +243,29 @@ export default function SignupPage() {
             Sign In
           </Link>
         </div>
-        <div className="flex items-center w-full my-1.5">
+        <div className="flex items-center w-full my-2">
           <div className="flex-grow h-px bg-gray-200" />
           <span className="mx-2 text-gray-400 text-xs">or continue with</span>
+          <div className="flex-grow h-px bg-gray-200" />
         </div>
-        <div className="flex justify-center gap-4 w-full mt-1">
-          <button className="border border-[#8B2323] text-[#8B2323] rounded-full p-2 hover:bg-[#8B2323]/10 transition-colors cursor-pointer">
-            <FaApple className="w-4 h-4" />
+        <div className="flex justify-center gap-4 w-full mt-1 mb-2">
+          <button 
+            className="bg-white border border-[#8B2323] text-[#8B2323] rounded-full p-2.5 hover:bg-[#8B2323]/5 transition-colors cursor-pointer"
+            aria-label="Sign up with Apple"
+          >
+            <FaApple className="w-5 h-5" />
           </button>
-          <button className="border border-[#8B2323] text-[#8B2323] rounded-full p-2 hover:bg-[#8B2323]/10 transition-colors cursor-pointer">
-            <FaGoogle className="w-4 h-4" />
+          <button 
+            className="bg-white border border-[#8B2323] text-[#8B2323] rounded-full p-2.5 hover:bg-[#8B2323]/5 transition-colors cursor-pointer"
+            aria-label="Sign up with Google"
+          >
+            <FaGoogle className="w-5 h-5" />
+          </button>
+          <button 
+            className="bg-white border border-[#8B2323] text-[#8B2323] rounded-full p-2.5 hover:bg-[#8B2323]/5 transition-colors cursor-pointer"
+            aria-label="Sign up with Facebook"
+          >
+            <FaFacebookF className="w-5 h-5" />
           </button>
         </div>
       </div>

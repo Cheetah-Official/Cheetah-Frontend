@@ -167,6 +167,7 @@ export default function CompareResult() {
                   value={departureDate}
                   onChange={(e) => setDepartureDate(e.target.value)}
                   className="px-4 py-2 rounded-lg border text-gray-700 bg-white focus:outline-none w-36 font-medium"
+                  aria-label="Departure Date"
                 />
               </div>
               <div className="flex flex-col">
@@ -181,6 +182,7 @@ export default function CompareResult() {
                   value={returnDate}
                   onChange={(e) => setReturnDate(e.target.value)}
                   className="px-4 py-2 rounded-lg border text-gray-700 bg-white focus:outline-none w-36 font-medium"
+                  aria-label="Return Date"
                 />
               </div>
             </div>

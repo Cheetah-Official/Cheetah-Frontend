@@ -6,13 +6,14 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { FaApple, FaGoogle, FaEnvelope, FaPhone, FaLock } from "react-icons/fa";
+import { FaApple, FaGoogle, FaFacebookF, FaEnvelope, FaPhone, FaUser, FaHome } from "react-icons/fa";
 import { authApi } from "@/lib/api/endpoints/auth";
-import AuthCard from "@/components/AuthCard";
 
 const SignInSchema = z.object({
-  identifier: z.string().min(1, "Email or phone is required"),
-  password: z.string().min(1, "Password is required"),
+  fullName: z.string().min(1, "Full name is required"),
+  email: z.string().email("Enter a valid email"),
+  phone: z.string().min(1, "Phone number is required"),
+  address: z.string().min(1, "Home address is required"),
 });
 
 type SignInForm = z.infer<typeof SignInSchema>;

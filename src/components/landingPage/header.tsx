@@ -27,6 +27,7 @@ export default function Header({
             {/* From City */}
             <div className="relative">
               <select
+                name="fromCity"
                 value={fromCity}
                 onChange={(e) => setFromCity(e.target.value)}
                 className="px-4 py-2 bg-gray-100/90 backdrop-blur-sm rounded-lg text-gray-800 text-sm font-medium focus:ring-2 focus:ring-red-500 focus:outline-none transition-all duration-200 appearance-none pr-8"
@@ -52,6 +53,7 @@ export default function Header({
             {/* To City */}
             <div className="relative">
               <select
+                name="toCity"
                 value={toCity}
                 onChange={(e) => setToCity(e.target.value)}
                 className="px-4 py-2 bg-gray-100/90 backdrop-blur-sm rounded-lg text-gray-800 text-sm font-medium focus:ring-2 focus:ring-red-500 focus:outline-none transition-all duration-200 appearance-none pr-8"
@@ -67,7 +69,7 @@ export default function Header({
 
             {/* Compare Button */}
             <button
-              className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105"
+              className="bg-[#800000] hover:bg-[#800000] text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105"
               onClick={onCompareClick}
             >
               Compare

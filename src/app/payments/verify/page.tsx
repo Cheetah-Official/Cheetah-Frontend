@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { paymentsApi } from "@/lib/api/endpoints/payments";
 
-export default function PaymentVerifyPage() {
+function PaymentVerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const paymentRef =
@@ -65,5 +65,20 @@ export default function PaymentVerifyPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentVerifyPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#F6F6F6] p-6">
+        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center">
+          <div className="text-2xl font-bold text-[#8B2323] mb-2">Payment Verification</div>
+          <div className="text-gray-600 mb-6">Loading...</div>
+        </div>
+      </div>
+    }>
+      <PaymentVerifyContent />
+    </Suspense>
   );
 }

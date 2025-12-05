@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams, useRouter, useParams } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { bookingsApi } from "@/lib/api/endpoints/bookings";
@@ -20,7 +20,7 @@ type PassengerForm = {
   email?: string;
 };
 
-export default function BookingDetailsPage() {
+function BookingDetailsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const routeParams = useParams();
@@ -346,10 +346,10 @@ export default function BookingDetailsPage() {
                 <div>
                   <button
                     type="submit"
-                    disabled={createBooking.isLoading}
+                    disabled={createBooking.isPending}
                     className="bg-[#8B2323] text-white px-6 py-3 rounded-lg font-semibold cursor-pointer disabled:opacity-60"
                   >
-                    {createBooking.isLoading ? "Booking…" : "Confirm Booking"}
+                    {createBooking.isPending ? "Booking…" : "Confirm Booking"}
                   </button>
                 </div>
               </form>
@@ -358,5 +358,21 @@ export default function BookingDetailsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BookingDetailsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#F6F6F6] p-4 sm:p-6 md:p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-xl shadow p-4 sm:p-6">
+            <div className="text-gray-600">Loading booking details…</div>
+          </div>
+        </div>
+      </div>
+    }>
+      <BookingDetailsContent />
+    </Suspense>
   );
 }
