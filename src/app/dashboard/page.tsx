@@ -186,7 +186,7 @@ function DashboardContent() {
                 setMobileMenuOpen(false)
               }}
             >
-              <FaBell className="w-4 h-4 sm:w-5 sm:h-5" /> Activity
+              <FaBell className="w-4 h-4 sm:w-5 sm:h-5" /> Notifications
             </button>
             <button 
               className={`flex items-center w-full px-3 py-2.5 sm:py-3 rounded-lg font-semibold gap-3 cursor-pointer transition-colors text-sm sm:text-base ${
@@ -266,7 +266,7 @@ function DashboardContent() {
                   type="date" 
                   value={departure}
                   onChange={(e) => setDeparture(e.target.value)}
-                  className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] w-full sm:w-28 md:w-32 font-medium text-sm sm:text-base"
+                  className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] w-full sm:w-28 md:w-32 font-medium text-sm sm:text-base" 
                   aria-label="Departure Date"
                 />
               </div>
@@ -276,7 +276,7 @@ function DashboardContent() {
                   type="date" 
                   value={returnDate}
                   onChange={(e) => setReturnDate(e.target.value)}
-                  className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] w-full sm:w-28 md:w-32 font-medium text-sm sm:text-base"
+                  className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] w-full sm:w-28 md:w-32 font-medium text-sm sm:text-base" 
                   aria-label="Return Date"
                 />
               </div>
@@ -397,182 +397,233 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* Activity Tab */}
+        {/* Notifications Tab */}
         {activeTab === "activity" && (
-          <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
-            {/* Left Column - Narrow */}
-            <div className="w-full lg:w-1/3 space-y-3 sm:space-y-4">
-              {/* Ticket Details Card */}
-              <div className="bg-white rounded-xl p-3 sm:p-4 md:p-6 shadow-sm">
-                <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">Ticket Details</h3>
-
-                {/* Company and Passenger Info */}
-                <div className="flex items-center justify-between mb-4 sm:mb-6">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <Image src="/CHISCO.png" alt="Provider" width={36} height={36} className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 object-contain" />
+          <div className="space-y-4 sm:space-y-6">
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">Notifications</h2>
+            
+            {/* Grid Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:items-stretch">
+              {/* Left Column - Stacked Cards */}
+              <div className="flex flex-col gap-4 sm:gap-6 h-full">
+                {/* Top Left - Ticket Details Card */}
+                <div className="bg-[#F2F2F2] rounded-xl p-3 sm:p-4 shadow-sm">
+                <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3">Ticket Details</h3>
+                
+                {/* Company and Route */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-full border border-gray-300 bg-white flex items-center justify-center overflow-hidden">
+                      <Image 
+                        src="/CHISCO.png" 
+                        alt="CHISCO express" 
+                        width={40} 
+                        height={40} 
+                        className="w-10 h-10 object-contain"
+                      />
+                    </div>
                     <div>
-                      <h4 className="text-base sm:text-lg md:text-xl font-bold text-gray-800">{activeBooking?.schedule_details?.provider_name || activeBooking?.provider_name || "—"}</h4>
-                      <p className="text-gray-600 text-xs sm:text-sm md:text-base">{activeBooking ? `${activeBooking.schedule_details?.origin || activeBooking.origin || "-"} - ${activeBooking.schedule_details?.destination || activeBooking.destination || "-"}` : "—"}</p>
+                      <h4 className="text-base font-bold text-gray-800">Chisco</h4>
+                      <p className="text-xs text-gray-600">
+                        {activeBooking ? `${activeBooking.schedule_details?.origin || activeBooking.origin || "Lagos"} - ${activeBooking.schedule_details?.destination || activeBooking.destination || "Abuja"}` : "Lagos - Abuja"}
+                      </p>
                     </div>
                   </div>
-                  <div className="bg-gray-100 px-2 sm:px-3 py-1 rounded-full">
-                    <span className="text-gray-800 font-medium text-xs sm:text-sm">{activeBooking?.passenger_count ?? (activeBooking?.passengers?.length ?? 0)} Passenger(s)</span>
+                  <div className="border border-gray-300 px-2 py-1 rounded-full bg-white">
+                    <span className="text-xs font-medium text-gray-800">
+                      <span className="font-bold">{activeBooking?.passenger_count ?? (activeBooking?.passengers?.length ?? 2)}</span> Passengers
+                    </span>
                   </div>
                 </div>
 
-                {/* Departure Date and Progress */}
-                <div className="mb-4 sm:mb-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                      <span className="text-gray-500 text-xs sm:text-sm md:text-base">Departure</span>
-                      <span className="text-gray-800 font-bold text-xs sm:text-sm md:text-base">{activeBooking?.schedule_details?.departure_time ? new Date(activeBooking.schedule_details.departure_time).toLocaleString() : "—"}</span>
+                {/* Departure Date and Days Remaining */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-0.5">Departure Date</p>
+                      <p className="text-sm font-bold text-gray-800">
+                        {activeBooking?.schedule_details?.departure_time 
+                          ? (() => {
+                              const date = new Date(activeBooking.schedule_details.departure_time);
+                              const day = date.getDate();
+                              const month = date.toLocaleDateString('en-US', { month: 'long' });
+                              const year = date.getFullYear();
+                              const suffix = day === 1 || day === 21 || day === 31 ? 'st' : day === 2 || day === 22 ? 'nd' : day === 3 || day === 23 ? 'rd' : 'th';
+                              return `${month} ${day}${suffix}, ${year}`;
+                            })()
+                          : "July 28th, 2025"}
+                      </p>
                     </div>
-                    <span className="text-gray-800 font-bold text-xs sm:text-sm md:text-base">{activeBooking ? "" : "—"}</span>
+                    <p className="text-xl font-bold text-gray-800">
+                      {(() => {
+                        if (activeBooking?.schedule_details?.departure_time) {
+                          const days = Math.ceil((new Date(activeBooking.schedule_details.departure_time).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                          return days > 0 ? days : 0
+                        }
+                        return 4
+                      })()} days
+                    </p>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
-                    <div className="bg-[#8B2323] h-1.5 sm:h-2 rounded-full" style={{ width: activeBooking ? '60%' : '0%' }}></div>
+                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                    <div className="bg-[#ad6e6e] h-1.5 rounded-full" style={{ width: '75%' }}></div>
                   </div>
                 </div>
 
-                {/* Amenities */}
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-6 mb-4 sm:mb-6">
-                  {(activeBooking?.schedule_details?.amenities || ["Free WiFi", "Insurance"]).slice(0, 2).map((label: string, idx: number) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <span className="text-green-500 text-base sm:text-lg">✓</span>
-                      <span className="text-gray-500 text-xs sm:text-sm">{label}</span>
+                {/* Included Features */}
+                <div className="flex flex-col gap-2 mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
+                      <span className="text-white text-[10px] font-bold">✓</span>
                     </div>
-                  ))}
+                    <span className="text-xs text-gray-600">Free WiFi</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
+                      <span className="text-white text-[10px] font-bold">✓</span>
+                    </div>
+                    <span className="text-xs text-gray-600">Free Insurance</span>
+                  </div>
                 </div>
 
-                {/* Download Button */}
-                <div className="flex justify-center lg:justify-end">
+                {/* Download Ticket Button */}
+                <div className="flex justify-end">
                   <button
-                    className="bg-[#8B2323] text-white py-2.5 sm:py-3 px-4 sm:px-6 md:px-8 rounded-lg font-semibold hover:bg-[#7A1F1F] transition-colors w-full sm:w-auto text-sm sm:text-base disabled:bg-gray-300 disabled:text-gray-600"
-                    disabled={!activeBooking?.schedule_details?.schedule_id}
-                    onClick={() => activeBooking?.schedule_details?.schedule_id && router.push(`/bookings/${encodeURIComponent(activeBooking.schedule_details.schedule_id)}?passengers=${encodeURIComponent(activeBooking.passenger_count ?? (activeBooking.passengers?.length ?? 1))}`)}
+                    className="bg-[#8B2323] text-white py-2 px-6 rounded-lg font-semibold hover:bg-[#7A1F1F] transition-colors text-sm"
+                    onClick={() => {
+                      if (activeBooking?.schedule_details?.schedule_id) {
+                        router.push(`/bookings/${encodeURIComponent(activeBooking.schedule_details.schedule_id)}?passengers=${encodeURIComponent(activeBooking.passenger_count ?? (activeBooking.passengers?.length ?? 1))}`)
+                      }
+                    }}
                   >
-                    {activeBooking ? 'View Ticket' : 'Download Ticket'}
+                    Download Ticket
                   </button>
                 </div>
-              </div>
+                </div>
 
-              {/* Activity List Card */}
-              <div className="bg-white rounded-xl p-3 sm:p-4 shadow-sm">
-                <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">Activity</h3>
-                <div className="space-y-2 sm:space-y-3 max-h-48 overflow-y-auto">
-                  {loadingBookings && (
-                    <div className="text-gray-600 text-sm">Loading recent activity…</div>
-                  )}
-                  {!loadingBookings && (!userBookings || userBookings.length === 0) && (
-                    <div className="text-gray-600 text-sm">No recent activity.</div>
-                  )}
-                  {!loadingBookings && userBookings && userBookings.slice(0, 10).map((bk: any) => {
-                    const scheduleId = bk.schedule_id || bk.schedule_details?.schedule_id || ""
+                {/* Bottom Left - Notification List Card */}
+                <div className="bg-[#F2F2F2] rounded-xl p-4 sm:p-6 shadow-sm flex flex-col flex-1 min-h-0 lg:h-full">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">Notification</h3>
+                  <div className="space-y-4 flex-1 overflow-y-auto">
+                  {/* Wi-Fi Code Notification */}
+                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    <FaWifi className="text-[#8B2323] w-5 h-5 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold text-gray-800">Wi-Fi Code</span>
+                        <span className="text-xs text-gray-500">30 Mins ago</span>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        Your free onboard Wi-Fi code is ready. Stay connected throughout your trip.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Reminder Notification */}
+                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    <FaExclamationTriangle className="text-[#8B2323] w-5 h-5 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold text-gray-800">Reminder</span>
+                        <span className="text-xs text-gray-500">2 Days ago</span>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        Trip starts soon. Don't forget to prepare for your journey.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Additional notifications from bookings */}
+                  {!loadingBookings && userBookings && userBookings.slice(0, 3).map((bk: any, idx: number) => {
                     const provider = bk.schedule_details?.provider_name || bk.provider_name || "Provider"
                     const origin = bk.schedule_details?.origin || bk.origin || "-"
                     const destination = bk.schedule_details?.destination || bk.destination || "-"
                     const dep = bk.schedule_details?.departure_time || bk.departure_time
-                    const dateLabel = dep ? new Date(dep).toLocaleString() : ""
-                    const status = (bk.booking_status || bk.status || "").toString()
-                    const passengers = bk.passenger_count ?? (bk.passengers?.length ?? "-")
-                    const statusColor = status.toLowerCase().includes("confirm") ? "text-green-600" : status.toLowerCase().includes("cancel") ? "text-red-600" : "text-yellow-600"
+                    const timeAgo = dep ? Math.floor((Date.now() - new Date(dep).getTime()) / (1000 * 60 * 60)) : idx + 1
                     return (
-                      <div key={bk.booking_id || bk.booking_reference} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
-                        <FaCheckCircle className={`${statusColor} w-3 h-3 sm:w-4 sm:h-4 mt-0.5 sm:mt-1 flex-shrink-0`} />
-                        <div className="flex-1 min-w-0">
+                      <div key={bk.booking_id || idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                        <FaCheckCircle className="text-green-500 w-5 h-5 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs sm:text-sm font-semibold text-gray-800 truncate">{provider} — {origin} → {destination}</span>
-                            <span className="text-xs text-gray-500 ml-2 whitespace-nowrap">{dateLabel}</span>
+                            <span className="font-semibold text-gray-800">Booking Confirmed</span>
+                            <span className="text-xs text-gray-500">{timeAgo} {timeAgo === 1 ? 'Hour' : 'Hours'} ago</span>
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-gray-600">
-                            <span className={`font-medium ${statusColor}`}>{status || "Pending"}</span>
-                            <span>•</span>
-                            <span>{passengers} passenger(s)</span>
-                            {bk.booking_reference && (<><span>•</span><span>Ref: {bk.booking_reference}</span></>)}
-                          </div>
+                          <p className="text-sm text-gray-600">
+                            Your booking for {provider} - {origin} to {destination} has been confirmed.
+                          </p>
                         </div>
-                        {scheduleId && (
-                          <button
-                            className="text-[#8B2323] text-xs sm:text-sm font-semibold hover:underline cursor-pointer"
-                            onClick={() => router.push(`/bookings/${encodeURIComponent(scheduleId)}?passengers=${encodeURIComponent(passengers || 1)}`)}
-                          >View</button>
-                        )}
                       </div>
                     )
                   })}
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column - Wide */}
-            <div className="w-full lg:w-2/3 space-y-3 sm:space-y-4">
-              {/* Trip Progress Card */}
-              <div className="bg-white rounded-xl p-3 sm:p-4 md:p-6 shadow-sm">
-                <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">Trip Progress</h3>
-
-                {/* Progress Steps (driven by active booking) */}
-                <div className="space-y-4 sm:space-y-6">
-                  {(() => {
-                    const steps = [] as Array<{ title: string; at?: string | null; done: boolean }>
-                    const bookedAt = (activeBooking as any)?.created_at || (activeBooking as any)?.booking_time || null
-                    const paymentDone = ((activeBooking as any)?.payment_status || '').toLowerCase().includes('paid')
-                    const depTime = (activeBooking as any)?.schedule_details?.departure_time || null
-                    const arrTime = (activeBooking as any)?.schedule_details?.arrival_time || null
-                    steps.push({ title: 'Ticket Booked', at: bookedAt, done: Boolean(activeBooking) })
-                    steps.push({ title: 'Payment Confirmed', at: paymentDone ? bookedAt : null, done: paymentDone })
-                    steps.push({ title: 'Boarding', at: depTime, done: false })
-                    steps.push({ title: 'Departure', at: depTime, done: false })
-                    steps.push({ title: 'Arrival', at: arrTime, done: false })
-
-                    return steps.map((s, i) => (
-                      <div key={i} className="flex items-center gap-3 sm:gap-4">
-                        <div className={`w-6 h-6 sm:w-8 sm:h-8 ${s.done ? 'bg-[#8B2323] text-white' : 'bg-gray-300 text-gray-600'} rounded-full flex items-center justify-center font-bold text-xs sm:text-sm`}>{i + 1}</div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-gray-800 text-sm sm:text-base">{s.title}</h4>
-                          <p className="text-xs sm:text-sm text-gray-600">{s.at ? new Date(s.at).toLocaleString() : '—'}</p>
-                        </div>
-                        {s.done ? <FaCheckCircle className="text-green-500 w-4 h-4 sm:w-5 sm:h-5" /> : <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-gray-300 rounded-full" />}
-                      </div>
-                    ))
-                  })()}
+                  </div>
                 </div>
               </div>
 
-              {/* Amenities Card */}
-              <div className="bg-white rounded-xl p-3 sm:p-4 md:p-6 shadow-sm">
-                <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">Trip Amenities</h3>
+              {/* Right Column - Wi-Fi Code Card */}
+              <div className="bg-[#F2F2F2] rounded-xl p-4 sm:p-6 shadow-sm flex flex-col h-full">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-[#8B2323] rounded-full p-2 flex items-center justify-center">
+                      <FaWifi className="text-white w-5 h-5" />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-800">Wi-Fi Code</h3>
+                  </div>
+                  <span className="text-xs text-gray-500">30 Mins ago</span>
+                </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg">
-                    <FaWifi className="text-[#8B2323] w-4 h-4 sm:w-5 sm:h-5" />
-                    <div>
-                      <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Free WiFi</h4>
-                      <p className="text-xs sm:text-sm text-gray-600">High-speed internet access</p>
+                <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+                  You've received a free Wi-Fi code for your upcoming trip. Stay connected and enjoy smooth browsing throughout your journey — courtesy of Cheetah.
+                </p>
+
+                <div className="flex-1 flex flex-col">
+                  {/* Details in table-like format with separators */}
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center py-3 border-b border-gray-200">
+                      <span className="text-sm text-gray-600">Wi-Fi Code:</span>
+                      <div className="bg-[#d5b5b5]/20 border border-[#d5b5b5]/30 rounded-lg px-3 py-2">
+                        <span className="text-sm font-mono font-semibold text-[#800000]">CHEETAH-8324</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-between items-center py-3 border-b border-gray-200">
+                      <span className="text-sm text-gray-600">Trip Date:</span>
+                      <span className="text-sm text-gray-800 font-medium">
+                        {activeBooking?.schedule_details?.departure_time 
+                          ? new Date(activeBooking.schedule_details.departure_time).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                          : "June 24, 2025"}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center py-3 border-b border-gray-200">
+                      <span className="text-sm text-gray-600">Transport Provider:</span>
+                      <span className="text-sm text-gray-800 font-medium">
+                        {activeBooking?.schedule_details?.provider_name || activeBooking?.provider_name || "Chisco"}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center py-3 border-b border-gray-200">
+                      <span className="text-sm text-gray-600">Coverage:</span>
+                      <span className="text-sm text-gray-800 font-medium">Full trip duration</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center py-3 border-b border-gray-200">
+                      <span className="text-sm text-gray-600">Status:</span>
+                      <span className="text-sm text-green-600 font-medium">Active</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center py-3">
+                      <span className="text-sm text-gray-600">Cost:</span>
+                      <span className="text-sm text-[#E08B2F] font-medium">Free</span>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg">
-                    <FaDownload className="text-[#8B2323] w-4 h-4 sm:w-5 sm:h-5" />
-                    <div>
-                      <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Free Insurance</h4>
-                      <p className="text-xs sm:text-sm text-gray-600">Comprehensive travel coverage</p>
+
+                  {/* Instructions at bottom */}
+                  <div className="flex items-start gap-3 pt-4 mt-auto">
+                    <div className="bg-[#E08B2F] rounded-full p-2 flex items-center justify-center flex-shrink-0">
+                      <FaExclamationTriangle className="text-white w-4 h-4" />
                     </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg">
-                    <FaUser className="text-[#8B2323] w-4 h-4 sm:w-5 sm:h-5" />
-                    <div>
-                      <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Professional Driver</h4>
-                      <p className="text-xs sm:text-sm text-gray-600">Experienced and certified</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg">
-                    <FaCheckCircle className="text-[#8B2323] w-4 h-4 sm:w-5 sm:h-5" />
-                    <div>
-                      <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Safety First</h4>
-                      <p className="text-xs sm:text-sm text-gray-600">Regular maintenance checks</p>
-                    </div>
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      To use, simply connect to the "Cheetah Bus Wi-Fi" network and enter the code when prompted.
+                    </p>
                   </div>
                 </div>
               </div>

@@ -23,7 +23,13 @@ export default function SignInPage() {
 
   const mutation = useMutation({
     mutationFn: (payload: SignInForm) => {
-      return authApi.tokenLogin({ username: payload.email, password: payload.password });
+      // Store user data in localStorage for authentication
+      const userData = {
+        email: payload.email,
+        fullName: payload.email.split('@')[0], // Use email prefix as name
+      };
+      localStorage.setItem('user', JSON.stringify(userData));
+      return Promise.resolve({ success: true });
     },
     onSuccess: () => router.push("/dashboard"),
   });

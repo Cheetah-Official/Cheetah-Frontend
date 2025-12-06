@@ -35,20 +35,14 @@ export default function SignupPage() {
 
   const mutation = useMutation({
     mutationFn: async (data: SignupForm) => {
-      const [first_name, ...rest] = data.fullName.trim().split(/\s+/)
-      const last_name = rest.join(" ")
-      await authApi.register({
+      // Store user data in localStorage for authentication
+      const userData = {
         email: data.email,
-        password: data.password,
-        first_name,
-        last_name,
+        fullName: data.fullName,
         phone: data.phone || undefined,
-      })
-      // Auto-login after successful registration
-      return authApi.tokenLogin({
-        username: data.email,
-        password: data.password,
-      })
+      };
+      localStorage.setItem('user', JSON.stringify(userData));
+      return Promise.resolve({ success: true })
     },
     onSuccess: () => {
       router.push('/dashboard')
