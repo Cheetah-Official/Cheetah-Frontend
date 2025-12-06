@@ -105,6 +105,7 @@ export default function CompareResult() {
           <button
             className="bg-white rounded-full shadow p-2 cursor-pointer hover:bg-gray-50 transition-colors"
             onClick={() => router.push("/")}
+            aria-label="Close and return to home"
           >
             <FaTimes className="w-5 h-5 text-gray-500" />
           </button>
@@ -192,12 +193,7 @@ export default function CompareResult() {
             <button
               className="bg-[#8B2323] text-white px-10 py-3 rounded-lg font-semibold text-lg cursor-pointer w-full"
               onClick={() => {
-                const el =
-                  typeof document !== "undefined"
-                    ? document.getElementById("compare-results")
-                    : null;
-                if (el)
-                  el.scrollIntoView({ behavior: "smooth", block: "start" });
+                router.push("/signin");
               }}
             >
               Proceed

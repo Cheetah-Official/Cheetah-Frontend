@@ -16,23 +16,32 @@ export function useAuth() {
       setLoading(true);
       setError(null);
       try {
-        const token = getAccessToken();
-        if (!token) {
+        // Bypass backend - use localStorage
+        const userData = localStorage.getItem('user');
+        if (!userData) {
           if (mounted) {
             setUser(null);
             setLoading(false);
           }
           return;
         }
-        const me = await authApi.me();
-        if (mounted) setUser(me);
+        const parsedUser = JSON.parse(userData);
+        // Create a mock user object with expected structure
+        const mockUser = {
+          user_id: 1,
+          email: parsedUser.email,
+          first_name: parsedUser.fullName?.split(' ')[0] || 'User',
+          last_name: parsedUser.fullName?.split(' ').slice(1).join(' ') || '',
+          phone: parsedUser.phone || null,
+          is_verified: true,
+          created_at: new Date().toISOString(),
+        };
+        if (mounted) setUser(mockUser as any);
       } catch (e: any) {
         if (mounted) {
           setUser(null);
           setError(e?.message || "Not authenticated");
         }
-        // clear token on 401-like cases to avoid loops
-        clearAccessToken();
       } finally {
         if (mounted) setLoading(false);
       }
@@ -45,7 +54,8 @@ export function useAuth() {
 
   const signOut = async () => {
     try {
-      await authApi.logout();
+      // Bypass backend - clear localStorage
+      localStorage.removeItem('user');
     } catch {
       // ignore
     } finally {

@@ -37,16 +37,21 @@ export default function SignupPage() {
     mutationFn: async (data: SignupForm) => {
       const [first_name, ...rest] = data.fullName.trim().split(/\s+/)
       const last_name = rest.join(" ")
-      return authApi.register({
+      await authApi.register({
         email: data.email,
         password: data.password,
         first_name,
         last_name,
         phone: data.phone || undefined,
       })
+      // Auto-login after successful registration
+      return authApi.tokenLogin({
+        username: data.email,
+        password: data.password,
+      })
     },
     onSuccess: () => {
-      router.push('/signin')
+      router.push('/dashboard')
     }
   })
 
