@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { FaBus, FaBell, FaCog, FaSignOutAlt, FaChevronRight, FaChevronLeft, FaUser, FaWifi, FaCheckCircle, FaExclamationTriangle, FaDownload, FaBars, FaTimes, FaEnvelope, FaPhone, FaHome } from "react-icons/fa"
+import { FaBus, FaBell, FaCog, FaSignOutAlt, FaChevronRight, FaChevronLeft, FaUser, FaWifi, FaCheckCircle, FaExclamationTriangle, FaDownload, FaBars, FaTimes, FaEnvelope, FaPhone, FaHome, FaUserCircle, FaSlidersH, FaQuestionCircle, FaFileAlt, FaExchangeAlt, FaCalendarAlt } from "react-icons/fa"
 import { useState, useEffect, Suspense } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { bookingsApi } from "@/lib/api/endpoints/bookings"
@@ -152,7 +152,13 @@ function DashboardContent() {
       }`}>
         <div>
           <div className="flex items-center justify-between mb-8 sm:mb-10 md:mb-12">
-            <Image src="/Cheetah 2.svg" alt="Cheetah" width={100} height={38} className="sm:w-[120px] sm:h-[45px]" />
+            <button 
+              onClick={() => router.push("/")}
+              className="cursor-pointer hover:opacity-80 transition-opacity"
+              aria-label="Go to home page"
+            >
+              <Image src="/Cheetah 2.svg" alt="Cheetah" width={100} height={38} className="sm:w-[120px] sm:h-[45px]" />
+            </button>
             <button 
               className="md:hidden p-2 rounded-lg hover:bg-gray-100"
               onClick={() => setMobileMenuOpen(false)}
@@ -240,43 +246,57 @@ function DashboardContent() {
         {activeTab === "transports" && (
           <div className="bg-[#F6F6F6] rounded-xl p-3 sm:p-4 md:p-6 lg:p-8 flex flex-col gap-3 sm:gap-4 md:gap-6">
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
-              <div className="flex flex-col sm:flex-row items-start gap-2 w-full sm:w-auto">
-                <span className="text-gray-500 text-xs sm:text-sm md:text-base">From</span>
-                <select value={from} onChange={e => setFrom(e.target.value)} className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] cursor-pointer w-full sm:w-auto text-sm sm:text-base" aria-label="Departure city">
+            <div className="flex flex-col sm:flex-row items-end sm:items-end gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <div className="flex flex-col gap-2 w-full sm:w-auto">
+                <span className="text-gray-700 text-xs sm:text-sm md:text-base font-medium">From</span>
+                <select value={from} onChange={e => setFrom(e.target.value)} className="px-3 sm:px-4 py-2.5 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] cursor-pointer w-full sm:w-40 text-sm sm:text-base shadow-sm h-[42px]" aria-label="Departure city">
                   <option value="">Select City</option>
                   <option value="Lagos">Lagos</option>
                   <option value="Abuja">Abuja</option>
                   <option value="Kano">Kano</option>
                 </select>
               </div>
-              <FaChevronRight className="text-gray-400 mx-2 hidden sm:block" />
-              <div className="flex flex-col sm:flex-row items-start gap-2 w-full sm:w-auto">
-                <span className="text-gray-500 text-xs sm:text-sm md:text-base">To</span>
-                <select value={to} onChange={e => setTo(e.target.value)} className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] cursor-pointer w-full sm:w-auto text-sm sm:text-base" aria-label="Destination city">
+              <button 
+                onClick={() => { const temp = from; setFrom(to); setTo(temp); }}
+                className="mb-0.5 sm:mb-0.5 flex-shrink-0"
+                aria-label="Swap cities"
+              >
+                <FaExchangeAlt className="text-[#E08B2F] w-5 h-5 sm:w-6 sm:h-6" />
+              </button>
+              <div className="flex flex-col gap-2 w-full sm:w-auto">
+                <span className="text-gray-700 text-xs sm:text-sm md:text-base font-medium">To</span>
+                <select value={to} onChange={e => setTo(e.target.value)} className="px-3 sm:px-4 py-2.5 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] cursor-pointer w-full sm:w-40 text-sm sm:text-base shadow-sm h-[42px]" aria-label="Destination city">
                   <option value="">Select City</option>
                   <option value="Lagos">Lagos</option>
                   <option value="Abuja">Abuja</option>
                   <option value="Kano">Kano</option>
                 </select>
               </div>
-              <div className="flex flex-col sm:flex-row items-start gap-2 w-full sm:w-auto sm:ml-4">
-                <span className="text-gray-500 text-xs sm:text-sm md:text-base">Departure Date</span>
+              <div className="flex flex-col gap-2 w-full sm:w-auto sm:ml-4">
+                <div className="flex items-center gap-2">
+                  <FaCalendarAlt className="text-gray-600 w-4 h-4" />
+                  <span className="text-gray-700 text-xs sm:text-sm md:text-base font-medium">Departure Date</span>
+                </div>
                 <input 
                   type="date" 
                   value={departure}
                   onChange={(e) => setDeparture(e.target.value)}
-                  className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] w-full sm:w-28 md:w-32 font-medium text-sm sm:text-base" 
+                  className="px-3 sm:px-4 py-2.5 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] w-full sm:w-40 md:w-44 font-medium text-sm sm:text-base shadow-sm h-[42px]" 
+                  placeholder="DD/MM/YYYY"
                   aria-label="Departure Date"
                 />
               </div>
-              <div className="flex flex-col sm:flex-row items-start gap-2 w-full sm:w-auto sm:ml-4">
-                <span className="text-gray-500 text-xs sm:text-sm md:text-base">Return Date <span className="text-xs text-[#E08B2F]">(if round trip)</span></span>
+              <div className="flex flex-col gap-2 w-full sm:w-auto sm:ml-4">
+                <div className="flex items-center gap-2">
+                  <FaCalendarAlt className="text-gray-600 w-4 h-4" />
+                  <span className="text-gray-700 text-xs sm:text-sm md:text-base font-medium">Return Date <span className="text-xs text-[#E08B2F]">(if round trip)</span></span>
+                </div>
                 <input 
                   type="date" 
                   value={returnDate}
                   onChange={(e) => setReturnDate(e.target.value)}
-                  className="px-2 sm:px-3 md:px-4 py-2 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] w-full sm:w-28 md:w-32 font-medium text-sm sm:text-base" 
+                  className="px-3 sm:px-4 py-2.5 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] w-full sm:w-40 md:w-44 font-medium text-sm sm:text-base shadow-sm h-[42px]" 
+                  placeholder="DD/MM/YYYY"
                   aria-label="Return Date"
                 />
               </div>
@@ -284,36 +304,42 @@ function DashboardContent() {
 
             {/* Companies and Bus */}
             <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8 items-start">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4 flex-1">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 flex-1 w-full lg:w-auto">
                 {(Array.isArray((providerStats as any)?.providers) && (providerStats as any).providers.length > 0
                   ? (providerStats as any).providers.map((p: any) => ({ name: p.provider_name || p.name || 'Provider', logo: '/Logo.png' }))
                   : companies
-                ).slice(0, 6).map((company: any) => (
-                  <button key={company.name} className="flex items-center gap-2 sm:gap-3 bg-white rounded-lg shadow-sm px-2 sm:px-3 md:px-4 py-2.5 sm:py-3 cursor-pointer border border-transparent hover:border-[#8B2323] transition">
-                    <Image src={company.logo} alt={company.name} width={28} height={28} className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 object-contain" />
-                    <span className="font-semibold text-[#222] text-xs sm:text-sm md:text-base">{company.name}</span>
+                ).slice(0, 4).map((company: any) => (
+                  <button key={company.name} className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-3 bg-white rounded-lg shadow-sm px-3 sm:px-4 py-3 sm:py-4 cursor-pointer border border-transparent hover:border-[#8B2323] hover:shadow-md transition-all">
+                    <Image src={company.logo} alt={company.name} width={40} height={40} className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
+                    <span className="font-semibold text-[#222] text-sm sm:text-base text-center sm:text-left">{company.name}</span>
                   </button>
                 ))}
               </div>
-              <div className="flex-shrink-0 relative mt-6 sm:mt-8 lg:mt-16 self-center lg:self-start">
+              <div className="flex-shrink-0 relative w-full lg:w-auto mt-4 lg:mt-0 self-center lg:self-start">
                 {/* Passenger Counter positioned in upper-right above bus */}
-                <div className="absolute -top-10 sm:-top-12 md:-top-16 -right-1 sm:-right-2 md:-right-4 bg-gray-100 rounded-lg shadow-md px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 border border-gray-200">
-                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
-                    <span className="text-gray-600 font-medium text-xs sm:text-sm">Passenger</span>
-                    <div className="flex items-center bg-gray-200 rounded-lg border border-gray-300">
-                      <button type="button" className="px-1.5 sm:px-2 md:px-3 py-1 text-gray-600 cursor-pointer hover:bg-gray-300 transition-colors text-xs sm:text-sm" onClick={() => setPassengers(p => Math.max(1, p - 1))}>-</button>
-                      <span className="px-1.5 sm:px-2 md:px-4 py-1 font-bold text-black text-xs sm:text-sm">{passengers}</span>
-                      <button type="button" className="px-1.5 sm:px-2 md:px-3 py-1 text-gray-600 cursor-pointer hover:bg-gray-300 transition-colors text-xs sm:text-sm" onClick={() => setPassengers(p => p + 1)}>+</button>
+                <div className="absolute -top-12 sm:-top-14 md:-top-16 -right-2 sm:-right-4 bg-white rounded-lg shadow-md px-3 sm:px-4 py-2 border border-gray-200 z-10">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <span className="text-gray-700 font-medium text-sm">Passenger</span>
+                    <div className="flex items-center bg-gray-100 rounded-lg border border-gray-300">
+                      <button type="button" className="px-2 sm:px-3 py-1 text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors text-sm font-semibold" onClick={() => setPassengers(p => Math.max(1, p - 1))} aria-label="Decrease passengers">-</button>
+                      <span className="px-3 sm:px-4 py-1 font-bold text-black text-sm sm:text-base">{passengers}</span>
+                      <button type="button" className="px-2 sm:px-3 py-1 text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors text-sm font-semibold" onClick={() => setPassengers(p => p + 1)} aria-label="Increase passengers">+</button>
                     </div>
                   </div>
                 </div>
-                <Image src="/Cheetah Bus Image 1.png" alt="Cheetah Bus" width={200} height={120} className="w-48 h-28 sm:w-56 sm:h-32 md:w-64 md:h-36 lg:w-[300px] lg:h-[180px] xl:w-[350px] xl:h-[200px] object-contain" />
+                <Image src="/Cheetah Bus Image 1.png" alt="Cheetah Bus" width={300} height={180} className="w-full max-w-[280px] sm:max-w-[320px] md:max-w-[360px] lg:w-[300px] lg:max-w-none h-auto object-contain mx-auto lg:mx-0" />
               </div>
             </div>
 
             {/* Proceed Button */}
             <div className="flex justify-center lg:justify-end mt-3 sm:mt-4 lg:mt-2">
-              <button onClick={handleProceed} className="bg-[#8B2323] text-white px-6 sm:px-8 md:px-10 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base md:text-lg cursor-pointer w-full sm:w-auto">Proceed</button>
+              <button onClick={handleProceed} className="bg-[#8B2323] text-white px-8 sm:px-10 md:px-12 py-3 sm:py-3.5 rounded-lg font-semibold text-base sm:text-lg md:text-xl cursor-pointer w-full sm:w-auto hover:bg-[#7A1F1F] transition-colors shadow-md">Proceed</button>
+            </div>
+
+            {/* Disclaimer */}
+            <div className="flex items-center gap-2 mt-4 sm:mt-6 text-xs sm:text-sm text-gray-600">
+              <FaExclamationTriangle className="text-[#E08B2F] w-4 h-4 flex-shrink-0" />
+              <span>Remember to confirm your travel details before proceeding</span>
             </div>
           </div>
         )}
@@ -378,19 +404,28 @@ function DashboardContent() {
 
               {/* Contact Information */}
               <div className="space-y-4">
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <FaEnvelope className="text-gray-500 w-5 h-5" />
-                  <span className="text-gray-700">{user?.email || ""}</span>
+                <div className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Image src="/Mail.png" alt="Email" width={14} height={14} className="w-3.5 h-3.5" />
+                    <span className="text-gray-700 font-medium">Email</span>
+                  </div>
+                  <span className="text-gray-500">{user?.email || ""}</span>
                 </div>
                 
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <FaPhone className="text-gray-500 w-5 h-5" />
-                  <span className="text-gray-700">{user?.phone ?? ""}</span>
+                <div className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Image src="/Phone.png" alt="Phone" width={14} height={14} className="w-3.5 h-3.5" />
+                    <span className="text-gray-700 font-medium">Phone Number</span>
+                  </div>
+                  <span className="text-gray-500">{user?.phone ?? ""}</span>
                 </div>
                 
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <FaHome className="text-gray-500 w-5 h-5" />
-                  <span className="text-gray-700">&nbsp;</span>
+                <div className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Image src="/Address.png" alt="Address" width={14} height={14} className="w-3.5 h-3.5" />
+                    <span className="text-gray-700 font-medium">Home Address</span>
+                  </div>
+                  <span className="text-gray-500">&nbsp;</span>
                 </div>
               </div>
             </div>
@@ -470,25 +505,25 @@ function DashboardContent() {
                 </div>
 
                 {/* Included Features */}
-                <div className="flex flex-col gap-2 mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
-                      <span className="text-white text-[10px] font-bold">✓</span>
+                <div className="flex flex-row gap-2 mb-4">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-full">
+                    <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
+                      <span className="text-green-500 text-xs font-bold">✓</span>
                     </div>
-                    <span className="text-xs text-gray-600">Free WiFi</span>
+                    <span className="text-sm text-gray-700">Free WiFi</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
-                      <span className="text-white text-[10px] font-bold">✓</span>
+                  <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-full">
+                    <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
+                      <span className="text-green-500 text-xs font-bold">✓</span>
                     </div>
-                    <span className="text-xs text-gray-600">Free Insurance</span>
+                    <span className="text-sm text-gray-700">Free Insurance</span>
                   </div>
                 </div>
 
                 {/* Download Ticket Button */}
                 <div className="flex justify-end">
                   <button
-                    className="bg-[#8B2323] text-white py-2 px-6 rounded-lg font-semibold hover:bg-[#7A1F1F] transition-colors text-sm"
+                    className="bg-[#8B2323] text-white py-2 px-6 rounded-lg font-semibold hover:bg-[#7A1F1F] transition-colors text-sm cursor-pointer"
                     onClick={() => {
                       if (activeBooking?.schedule_details?.schedule_id) {
                         router.push(`/bookings/${encodeURIComponent(activeBooking.schedule_details.schedule_id)}?passengers=${encodeURIComponent(activeBooking.passenger_count ?? (activeBooking.passengers?.length ?? 1))}`)
