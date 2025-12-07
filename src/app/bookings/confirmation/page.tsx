@@ -4,7 +4,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useEffect, useState, Suspense } from "react";
 import { useAuth } from "@/lib/useAuth";
-import { paymentsApi } from "@/lib/api/endpoints/payments";
+// TODO: Replace with RTK Query hooks
+// import { useGetPaymentByBookingQuery, useInitializePaystackTransactionMutation } from "@/feature/payments/paymentApiSlice";
 
 function BookingConfirmationContent() {
   const router = useRouter();
@@ -22,12 +23,17 @@ function BookingConfirmationContent() {
   const [initLoading, setInitLoading] = useState<boolean>(false);
   const [initError, setInitError] = useState<string>("");
 
+  // TODO: Replace with RTK Query hook
+  // Note: getBookingTotal may need to use useGetPaymentByBookingQuery or a different endpoint
+  // const { data: totals, isLoading: loadingTotals } = useGetPaymentByBookingQuery(Number(bookingId));
   useEffect(() => {
     const load = async () => {
       if (!bookingId) return;
       try {
         setLoadingTotals(true);
-        const t = await paymentsApi.getBookingTotal(bookingId);
+        // TODO: Replace with RTK Query
+        // const t = await paymentsApi.getBookingTotal(bookingId); // REMOVED
+        const t = null; // TODO: Get from RTK Query
         setTotals(t);
       } catch (e: any) {
         // non-blocking
@@ -38,15 +44,22 @@ function BookingConfirmationContent() {
     load();
   }, [bookingId]);
 
+  // TODO: Replace with RTK Query mutation
+  // const [initializePayment, { isLoading: initLoading, isError, error }] = useInitializePaystackTransactionMutation();
   const onPayNow = async () => {
     if (!bookingId) return;
     try {
       setInitError("");
       setInitLoading(true);
-      const init = await paymentsApi.initializePayment({
-        booking_id: bookingId,
-      });
-      const url = init?.authorization_url;
+      // TODO: Replace with RTK Query mutation
+      // const init = await initializePayment({
+      //   bookingId: Number(bookingId),
+      //   email: user?.email || "",
+      //   amount: totals?.grand_total || 0,
+      // }).unwrap();
+      // const url = init?.authorizationUrl || init?.authorization_url;
+      const init = null; // TODO: Get from RTK Query mutation
+      const url = null; // TODO: Get from RTK Query mutation result
       if (url) {
         window.location.href = url;
       } else {

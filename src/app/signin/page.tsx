@@ -8,7 +8,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FaApple, FaGoogle, FaFacebookF, FaLock } from "react-icons/fa";
 import Image from "next/image";
-import { authApi } from "@/lib/api/endpoints/auth";
+// TODO: Replace with RTK Query hooks
+// import { useRegisterUserMutation } from "@/feature/auth/authApiSlice";
+// import { useDispatch } from "react-redux";
+// import { setCredentials } from "@/feature/authentication/authSlice";
 
 const SignInSchema = z.object({
   email: z.string().email("Enter a valid email"),

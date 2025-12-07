@@ -2,7 +2,8 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { paymentsApi } from "@/lib/api/endpoints/payments";
+// TODO: Replace with RTK Query hooks
+// import { useVerifyPaystackTransactionQuery } from "@/feature/payments/paymentApiSlice";
 
 function PaymentVerifyContent() {
   const router = useRouter();
@@ -16,6 +17,8 @@ function PaymentVerifyContent() {
   const [status, setStatus] = useState<string>("verifying");
   const [message, setMessage] = useState<string>("");
 
+  // TODO: Replace with RTK Query hook
+  // const { data: res, isLoading, isError, error } = useVerifyPaystackTransactionQuery(paymentRef || "");
   useEffect(() => {
     const run = async () => {
       if (!paymentRef) {
@@ -25,7 +28,9 @@ function PaymentVerifyContent() {
       }
       try {
         setStatus("verifying");
-        const res = await paymentsApi.verifyPayment(paymentRef, provider);
+        // TODO: Replace with RTK Query
+        // const res = await paymentsApi.verifyPayment(paymentRef, provider); // REMOVED
+        const res = null; // TODO: Get from useVerifyPaystackTransactionQuery
         if (
           (res?.status || "").toLowerCase() === "success" ||
           (res?.message || "").toLowerCase().includes("success")

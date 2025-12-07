@@ -1,12 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { authApi } from "@/lib/api/endpoints/auth";
+// TODO: Replace with RTK Query hooks
+// import { useGetAuthenticatedUserQuery } from "@/feature/auth/authApiSlice";
+// import { useSelector } from "react-redux";
+// import { selectCurrentUser, logOut } from "@/feature/authentication/authSlice";
 import { clearAccessToken, getAccessToken } from "@/lib/auth";
-import type { UserResponseT } from "@/lib/api/schemas/auth";
+
+// TODO: Define proper user type or get from RTK Query
+type UserType = {
+  user_id?: number;
+  id?: number;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string | null;
+  is_verified?: boolean;
+  created_at?: string;
+  role?: string;
+  is_active?: boolean;
+};
 
 export function useAuth() {
-  const [user, setUser] = useState<UserResponseT | null>(null);
+  const [user, setUser] = useState<UserType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

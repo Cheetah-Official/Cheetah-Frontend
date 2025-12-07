@@ -4,8 +4,8 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { FaTimes } from "react-icons/fa";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { bookingsApi } from "@/lib/api/endpoints/bookings";
+// TODO: Replace with RTK Query hooks
+// import { useSearchSchedulesQuery } from "@/feature/schedules/scheduleApiSlice";
 
 export default function CompareResult() {
   const [passengers, setPassengers] = useState(1);
@@ -60,31 +60,19 @@ export default function CompareResult() {
     return () => clearTimeout(t);
   }, [providersCsv]);
 
-  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: [
-      "searchRoutes",
-      {
-        from,
-        to,
-        dateISO,
-        minPrice: dMinPrice,
-        maxPrice: dMaxPrice,
-        providers: dProvidersCsv,
-      },
-    ],
-    queryFn: async () =>
-      bookingsApi.searchRoutes({
-        origin: from!,
-        destination: to!,
-        date: dateISO,
-        include_comparison: true,
-        sort_by: "departure_time",
-        min_price: dMinPrice ? Number(dMinPrice) : undefined,
-        max_price: dMaxPrice ? Number(dMaxPrice) : undefined,
-        providers: dProvidersCsv || undefined,
-      }),
-    enabled: canSearch,
-  });
+  // TODO: Replace with RTK Query hook
+  // Use useSearchSchedulesQuery from scheduleApiSlice
+  // Note: The searchRoutes endpoint may need to be mapped to searchSchedules endpoint
+  // const { data, isLoading, isError, error, refetch, isFetching } = useSearchSchedulesQuery({
+  //   startDate: dateISO,
+  //   endDate: dateISO, // Adjust as needed
+  // });
+  const data = null; // TODO: Get from RTK Query
+  const isLoading = false; // TODO: Get from RTK Query
+  const isError = false; // TODO: Get from RTK Query
+  const error = null; // TODO: Get from RTK Query
+  const refetch = () => {}; // TODO: Get from RTK Query
+  const isFetching = false; // TODO: Get from RTK Query
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden">

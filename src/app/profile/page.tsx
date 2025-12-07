@@ -2,21 +2,19 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { authApi } from "@/lib/api/endpoints/auth";
+// TODO: Replace with RTK Query hooks
+// import { useGetAuthenticatedUserQuery } from "@/feature/auth/authApiSlice";
+// import { useDispatch } from "react-redux";
+// import { logOut } from "@/feature/authentication/authSlice";
 import { clearAccessToken } from "@/lib/auth";
 
 export default function ProfilePage() {
-  const {
-    data: user,
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
-    queryKey: ["me"],
-    queryFn: () => authApi.me(),
-    retry: false,
-  });
+  // TODO: Replace with RTK Query hook
+  // const { data: user, isLoading, isError, error } = useGetAuthenticatedUserQuery();
+  const user = null; // TODO: Get from RTK Query
+  const isLoading = false; // TODO: Get from RTK Query
+  const isError = false; // TODO: Get from RTK Query
+  const error = null; // TODO: Get from RTK Query
   const router = useRouter();
 
   useEffect(() => {
@@ -91,8 +89,11 @@ export default function ProfilePage() {
           </button>
           <button
             onClick={async () => {
+              // TODO: Replace with RTK Query logout
+              // const dispatch = useDispatch();
+              // dispatch(logOut());
               try {
-                await authApi.logout();
+                // await authApi.logout(); // REMOVED - Replace with RTK Query
               } catch {
               } finally {
                 clearAccessToken();

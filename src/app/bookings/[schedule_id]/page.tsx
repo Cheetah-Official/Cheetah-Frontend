@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams, useRouter, useParams } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { bookingsApi } from "@/lib/api/endpoints/bookings";
+// TODO: Replace with RTK Query hooks
+// import { useGetScheduleByIdQuery, useCreateBookingMutation } from "@/feature/bookings/bookingApiSlice";
 import {
   FaArrowLeft,
   FaClock,
@@ -37,11 +38,14 @@ function BookingDetailsContent() {
     Array.isArray(rawScheduleId) ? rawScheduleId[0] : rawScheduleId || "",
   );
 
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["scheduleDetails", scheduleId],
-    queryFn: () => bookingsApi.getScheduleDetails(scheduleId),
-    enabled: Boolean(scheduleId),
-  });
+  // TODO: Replace with RTK Query hook
+  // Note: getScheduleDetails may need to use useGetScheduleByIdQuery if scheduleId is numeric
+  // Or use a different endpoint if scheduleId is a string reference
+  // const { data, isLoading, isError, error } = useGetScheduleByIdQuery(Number(scheduleId));
+  const data = null; // TODO: Get from RTK Query
+  const isLoading = false; // TODO: Get from RTK Query
+  const isError = false; // TODO: Get from RTK Query
+  const error = null; // TODO: Get from RTK Query
 
   const [passengers, setPassengers] = useState<PassengerForm[]>([]);
   const [contactEmail, setContactEmail] = useState<string>("");
@@ -70,60 +74,81 @@ function BookingDetailsContent() {
 
   const [formError, setFormError] = useState<string>("");
 
-  const createBooking = useMutation({
-    mutationFn: (payload: any) => bookingsApi.createBooking(payload),
-    onSuccess: (res) => {
-      const ref = encodeURIComponent(res.booking_reference || "");
-      const emailParam = encodeURIComponent(contactEmail || "");
-      const origin = encodeURIComponent(data?.origin || "");
-      const destination = encodeURIComponent(data?.destination || "");
-      const date = encodeURIComponent(data?.departure_time || "");
-      const bookingId = encodeURIComponent(res.booking_id || "");
+  // TODO: Replace with RTK Query mutation
+  // const [createBooking, { isLoading: isPending, isSuccess, isError }] = useCreateBookingMutation();
+  // Usage in onSubmit:
+  // try {
+  //   const res = await createBooking(payload).unwrap();
+  //   // Handle success
+  // } catch (error) {
+  //   // Handle error
+  // }
+  const createBooking = {
+    mutate: async (payload: any) => {
+      // TODO: Implement with useCreateBookingMutation
+      // const result = await createBooking(payload).unwrap();
+      // return result;
+      throw new Error("TODO: Implement booking creation with RTK Query");
+    },
+    isPending: false, // TODO: Get from RTK Query mutation state
+    isSuccess: false, // TODO: Get from RTK Query mutation state
+    isError: false, // TODO: Get from RTK Query mutation state
+  };
+
+  // TODO: Move this success handler into the onSubmit function when using RTK Query
+  const handleBookingSuccess = (res: any) => {
+    const ref = encodeURIComponent(res.booking_reference || "");
+    const emailParam = encodeURIComponent(contactEmail || "");
+    const origin = encodeURIComponent(data?.origin || "");
+    const destination = encodeURIComponent(data?.destination || "");
+    const date = encodeURIComponent(data?.departure_time || "");
+    const bookingId = encodeURIComponent(res.booking_id || "");
+    try {
+      if (typeof window !== "undefined" && contactEmail) {
+        window.localStorage.setItem("cheetah_contact_email", contactEmail);
+        window.sessionStorage.removeItem("cheetah_pending_booking");
+      }
+    } catch {}
+    router.push(
+      `/bookings/confirmation?ref=${ref}&email=${emailParam}&origin=${origin}&destination=${destination}&date=${date}&booking_id=${bookingId}`,
+    );
+  };
+
+  // TODO: Move this error handler into the onSubmit function when using RTK Query
+  const handleBookingError = (e: any) => {
+    const status = Number(e?.status || 0);
+    if (status === 401 || status === 307) {
       try {
-        if (typeof window !== "undefined" && contactEmail) {
-          window.localStorage.setItem("cheetah_contact_email", contactEmail);
-          window.sessionStorage.removeItem("cheetah_pending_booking");
+        const payload = {
+          schedule_id: scheduleId,
+          passenger_details: passengers.map((p) => ({
+            first_name: p.first_name,
+            last_name: p.last_name,
+            phone: p.phone || undefined,
+            email: p.email || undefined,
+          })),
+          guest_email: contactEmail,
+          guest_phone: contactPhone || undefined,
+        };
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem(
+            "cheetah_pending_booking",
+            JSON.stringify(payload),
+          );
         }
       } catch {}
-      router.push(
-        `/bookings/confirmation?ref=${ref}&email=${emailParam}&origin=${origin}&destination=${destination}&date=${date}&booking_id=${bookingId}`,
-      );
-    },
-    onError: (e: any) => {
-      const status = Number(e?.status || 0);
-      if (status === 401 || status === 307) {
-        try {
-          const payload = {
-            schedule_id: scheduleId,
-            passenger_details: passengers.map((p) => ({
-              first_name: p.first_name,
-              last_name: p.last_name,
-              phone: p.phone || undefined,
-              email: p.email || undefined,
-            })),
-            guest_email: contactEmail,
-            guest_phone: contactPhone || undefined,
-          };
-          if (typeof window !== "undefined") {
-            window.sessionStorage.setItem(
-              "cheetah_pending_booking",
-              JSON.stringify(payload),
-            );
-          }
-        } catch {}
-        const nextUrl =
-          typeof window !== "undefined"
-            ? window.location.pathname +
-              window.location.search +
-              (window.location.search ? "&" : "?") +
-              "resume=1"
-            : `/bookings/${encodeURIComponent(scheduleId)}?passengers=${encodeURIComponent(passengersCount)}&resume=1`;
-        router.push(`/signin?next=${encodeURIComponent(nextUrl)}`);
-        return;
-      }
-      setFormError(e?.message || "Booking failed. Please try again.");
-    },
-  });
+      const nextUrl =
+        typeof window !== "undefined"
+          ? window.location.pathname +
+            window.location.search +
+            (window.location.search ? "&" : "?") +
+            "resume=1"
+          : `/bookings/${encodeURIComponent(scheduleId)}?passengers=${encodeURIComponent(passengersCount)}&resume=1`;
+      router.push(`/signin?next=${encodeURIComponent(nextUrl)}`);
+      return;
+    }
+    setFormError(e?.message || "Booking failed. Please try again.");
+  };
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();

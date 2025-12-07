@@ -6,7 +6,9 @@ import { Calendar, Building, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { bookingsApi } from "@/lib/api/endpoints/bookings";
+// TODO: Replace with RTK Query hooks
+// Note: getProviderStatistics may need a different endpoint or be removed if not in Swagger
+// Check if this should use schedule/trip endpoints instead
 
 const transportOptions = [
   {
@@ -36,11 +38,12 @@ export type CompareModalProps = {
 };
 
 export function CompareModal({ open, onClose, onSelect }: CompareModalProps) {
-  const { data, isLoading } = useQuery({
-    queryKey: ["providerStatistics"],
-    queryFn: () => bookingsApi.getProviderStatistics(),
-    enabled: open,
-  });
+  // TODO: Replace with RTK Query hook
+  // Note: Provider statistics endpoint may not exist in Swagger
+  // May need to use schedule/trip endpoints or create a new endpoint
+  // const { data, isLoading } = useGetAllSchedulesQuery(); // Example - adjust as needed
+  const data = null; // TODO: Get from RTK Query
+  const isLoading = false; // TODO: Get from RTK Query
 
   const providerLogo = (name: string) => {
     const n = (name || "").toLowerCase();
@@ -201,14 +204,8 @@ export default function BookingForm({
       alert("Please select From, To and a Departure date");
       return;
     }
-    const params = new URLSearchParams({
-      from: formData.from,
-      to: formData.to,
-      departure: formData.departure,
-      returnDate: formData.return,
-      passengers: "1",
-    });
-    router.push(`/compare/result?${params.toString()}`);
+    // Redirect to signup page - after signup, user will be redirected to dashboard
+    router.push('/signup');
   };
 
   const handlePick = (option: any) => {
@@ -306,7 +303,18 @@ export default function BookingForm({
             <span>Transport Company</span>
             <button
               type="button"
-              onClick={onCompareClick}
+              onClick={() => {
+                // Check if form is filled
+                if (formData.from && formData.to && formData.departure) {
+                  // Redirect to signup page
+                  router.push('/signup');
+                } else {
+                  // If form not filled, show compare modal (original behavior)
+                  if (onCompareClick) {
+                    onCompareClick();
+                  }
+                }
+              }}
               style={{
                 marginLeft: 12,
                 background: "#fff",
@@ -318,7 +326,7 @@ export default function BookingForm({
                 cursor: "pointer",
               }}
             >
-              Compare
+              Compare Transport
             </button>
           </div>
           <div className="relative">

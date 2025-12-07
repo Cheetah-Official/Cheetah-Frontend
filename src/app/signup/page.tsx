@@ -1,16 +1,22 @@
 "use client"
+import { useState } from "react"
 import Link from "next/link"
 import { FaApple, FaGoogle, FaFacebookF, FaLock } from "react-icons/fa"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { authApi } from "@/lib/api/endpoints/auth"
-import { useMutation } from "@tanstack/react-query"
+import { useRegisterUserMutation } from "@/feature/auth/authApiSlice";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "@/feature/authentication/authSlice";
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 
 export default function SignupPage() {
   const router = useRouter()
+  const dispatch = useDispatch()
+  const [registerUser, { isLoading }] = useRegisterUserMutation()
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
   const SignupSchema = z.object({
     fullName: z.string().min(3, "Enter your full name"),
     email: z.string().email("Enter a valid email"),
@@ -28,26 +34,151 @@ export default function SignupPage() {
 
   type SignupForm = z.infer<typeof SignupSchema>
 
-  const { register, handleSubmit, formState: { errors } } = useForm<SignupForm>({
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<SignupForm>({
     resolver: zodResolver(SignupSchema),
     defaultValues: { fullName: "", email: "", phone: "", address: "", password: "", confirmPassword: "" }
   })
 
-  const mutation = useMutation({
-    mutationFn: async (data: SignupForm) => {
-      // Store user data in localStorage for authentication
+  const onSubmit = async (data: SignupForm) => {
+    setSubmitError(null);
+    
+    // Split full name into first and last name (outside try block for catch block access)
+    const trimmedName = data.fullName.trim();
+    const nameParts = trimmedName.split(/\s+/).filter(part => part.length > 0);
+    
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.length > 1 
+      ? nameParts.slice(1).join(" ") 
+      : nameParts[0] || "";
+    
+    try {
+
+      // Prepare registration payload based on Swagger spec
+      const payload = {
+        email: data.email,
+        password: data.password,
+        usersType: "PERSON" as const,
+        personDto: {
+          firstName: firstName,
+          lastName: lastName,
+        },
+      };
+
+      // Use the mutation result directly instead of unwrap() to handle text responses
+      const result = await registerUser(payload);
+      
+      console.log("Registration result:", result);
+      
+      // Check if there's an error in the result
+      let response: any = null;
+      
+      if ('error' in result && result.error) {
+        const errorData = result.error as any;
+        
+        // Special handling: if status is PARSING_ERROR but originalStatus is 200 and data contains "success"
+        // This means the API returned text "saved successfully" which RTK Query tried to parse as JSON
+        if (errorData?.status === 'PARSING_ERROR' && 
+            errorData?.originalStatus === 200 && 
+            typeof errorData?.data === 'string' && 
+            errorData.data.toLowerCase().includes('success')) {
+          // It's actually a success! Use the data from the error
+          console.log("Parsing error but actually success - handling as success");
+          response = errorData.data;
+        } else {
+          // Real error
+          setSubmitError(errorData?.data?.message || errorData?.message || "Failed to create account");
+          return;
+        }
+      } else {
+        // Normal success - get data from result
+        response = 'data' in result ? result.data : null;
+      }
+      
+      console.log("Registration response:", response);
+      
+      // Handle different response formats
+      // The API returns "saved successfully" as a string (200 OK)
       const userData = {
         email: data.email,
         fullName: data.fullName,
         phone: data.phone || undefined,
       };
+      
+      // If response is a string (like "saved successfully"), treat it as success
+      if (typeof response === 'string' && response.toLowerCase().includes('success')) {
+        // Response is just a success message, create user object from form data
+        dispatch(setCredentials({
+          accessToken: "",
+          refreshToken: "",
+          user: {
+            ...userData,
+            id: "",
+            first_name: firstName,
+            last_name: lastName,
+          },
+        }));
+      } else if (response && typeof response === 'object') {
+        // Response is an object with user data
+        dispatch(setCredentials({
+          accessToken: response.accessToken || response.access_token || "",
+          refreshToken: response.refreshToken || response.refresh_token || "",
+          user: {
+            ...userData,
+            id: response.userId || response.user_id || response.id || response.user?.id || "",
+            first_name: response.first_name || response.user?.first_name || firstName,
+            last_name: response.last_name || response.user?.last_name || lastName,
+          },
+        }));
+      } else {
+        // Default: treat as success even if response format is unexpected
+        dispatch(setCredentials({
+          accessToken: "",
+          refreshToken: "",
+          user: {
+            ...userData,
+            id: "",
+            first_name: firstName,
+            last_name: lastName,
+          },
+        }));
+      }
+
       localStorage.setItem('user', JSON.stringify(userData));
-      return Promise.resolve({ success: true })
-    },
-    onSuccess: () => {
-      router.push('/dashboard')
+      reset();
+      router.push('/dashboard');
+    } catch (err: any) {
+      console.error("Registration error:", err);
+      console.error("Error details:", JSON.stringify(err, null, 2));
+      
+      // Check if it's actually a success with text response
+      if (err?.data && typeof err.data === 'string' && err.data.toLowerCase().includes('success')) {
+        // It's actually a success! Handle it
+        const userData = {
+          email: data.email,
+          fullName: data.fullName,
+          phone: data.phone || undefined,
+        };
+        
+        dispatch(setCredentials({
+          accessToken: "",
+          refreshToken: "",
+          user: {
+            ...userData,
+            id: "",
+            first_name: firstName,
+            last_name: lastName,
+          },
+        }));
+        
+        localStorage.setItem('user', JSON.stringify(userData));
+        reset();
+        router.push('/dashboard');
+        return;
+      }
+      
+      setSubmitError(err?.data?.message || err?.message || err?.error || "Failed to create account");
     }
-  })
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0A2384] p-1.5 sm:p-4">
@@ -59,7 +190,7 @@ export default function SignupPage() {
             Get access to Free travel insurance, Free Wi-Fi, and your coverage history - all in one place.
           </p>
         </div>
-        <form className="w-full" onSubmit={handleSubmit((data) => mutation.mutate(data))}>
+        <form className="w-full" onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-1.5 sm:mb-2.5">
             <div className="flex items-center mb-0.5 sm:mb-1">
               <Image src="/Name.png" alt="Name" width={14} height={14} className="mr-1.5 sm:mr-2" />
@@ -69,7 +200,7 @@ export default function SignupPage() {
               id="fullName"
               type="text"
               {...register('fullName')}
-              placeholder="Full Name"
+              placeholder="First and Last Name"
               className="w-full px-2.5 sm:px-4 py-1.5 sm:py-2 bg-white text-black rounded-md sm:rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] focus:outline-none text-xs sm:text-sm"
               required
               autoComplete="name"
@@ -152,15 +283,17 @@ export default function SignupPage() {
             />
             {errors.confirmPassword && <p className="text-red-600 text-[10px] sm:text-xs mt-0">{errors.confirmPassword.message}</p>}
           </div>
-          {mutation.isError && (
-            <div className="text-red-600 text-[10px] sm:text-xs mb-1" role="alert">{(mutation.error as any)?.message || "Failed to create account"}</div>
+          {submitError && (
+            <div className="text-red-600 text-[10px] sm:text-xs mb-1" role="alert">
+              {submitError}
+            </div>
           )}
           <button
             type="submit"
-            disabled={mutation.isPending}
+            disabled={isLoading}
             className="w-full bg-[#8B2323] text-white py-1.5 sm:py-2.5 rounded-md sm:rounded-lg font-semibold transition-all duration-200 hover:opacity-90 mb-1 sm:mb-1.5 cursor-pointer disabled:opacity-60 text-xs sm:text-sm"
           >
-            {mutation.isPending ? "Creating Account..." : "Sign Up"}
+            {isLoading ? "Creating Account..." : "Sign Up"}
           </button>
         </form>
         <div className="text-[10px] sm:text-xs text-gray-600 mt-0 mb-1 sm:mb-1.5 text-center">

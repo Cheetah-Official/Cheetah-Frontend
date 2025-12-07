@@ -3,8 +3,10 @@
 import Image from "next/image"
 import { FaBus, FaBell, FaCog, FaSignOutAlt, FaChevronRight, FaChevronLeft, FaUser, FaWifi, FaCheckCircle, FaExclamationTriangle, FaDownload, FaBars, FaTimes, FaEnvelope, FaPhone, FaHome, FaUserCircle, FaSlidersH, FaQuestionCircle, FaFileAlt, FaExchangeAlt, FaCalendarAlt } from "react-icons/fa"
 import { useState, useEffect, Suspense } from "react"
-import { useQuery } from "@tanstack/react-query"
-import { bookingsApi } from "@/lib/api/endpoints/bookings"
+// TODO: Replace with RTK Query hooks
+// import { useGetBookingsByUserQuery } from "@/feature/bookings/bookingApiSlice";
+// import { useSelector } from "react-redux";
+// import { selectCurrentUser } from "@/feature/authentication/authSlice";
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/useAuth"
 
@@ -61,25 +63,19 @@ function DashboardContent() {
     }
   }, [searchParams])
 
+  // TODO: Replace with RTK Query hooks
   // Activity: fetch user's bookings to populate Activity tab
-  const { data: userBookings, isLoading: loadingBookings, refetch: refetchUserBookings } = useQuery({
-    queryKey: ["userBookings"],
-    queryFn: () => bookingsApi.getUserBookings({ limit: 20, offset: 0 }),
-    enabled: !!user,
-  })
+  // const { data: userBookings, isLoading: loadingBookings } = useGetBookingsByUserQuery({
+  //   userId: user?.id || 0,
+  //   page: 0,
+  //   size: 20,
+  // });
+  const userBookings: any[] = []; // TODO: Get from RTK Query
+  const loadingBookings = false; // TODO: Get from RTK Query
 
-  // Ensure bookings refresh immediately when auth state changes
-  useEffect(() => {
-    if (user) {
-      refetchUserBookings()
-    }
-  }, [user, refetchUserBookings])
-
-  // Provider statistics for Transports tab
-  const { data: providerStats } = useQuery({
-    queryKey: ["providerStatistics-dashboard"],
-    queryFn: () => bookingsApi.getProviderStatistics(),
-  })
+  // TODO: Provider statistics - Need to check if this endpoint exists in Swagger
+  // If not, may need to create a new endpoint or use existing schedule/trip endpoints
+  const providerStats = null; // TODO: Implement with appropriate RTK Query hook
 
   // Choose an active (latest upcoming) booking for the Activity left panel and Trip Progress
   const activeBooking = (() => {
