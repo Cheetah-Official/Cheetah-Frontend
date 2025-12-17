@@ -29,33 +29,30 @@ export const walletApiSlice = apiSlice.injectEndpoints({
     }),
     debitWallet: builder.mutation({
       query: ({ walletReference, amount }) => ({
-        url: WALLETS.DEBIT_WALLET(walletReference),
+        url: WALLETS.DEBIT_WALLET(walletReference, amount),
         method: "POST",
-        params: { amount },
       }),
       transformResponse: (response: any) => response?.data || response,
       invalidatesTags: ['Wallet'],
     }),
     creditWallet: builder.mutation({
       query: ({ walletReference, amount }) => ({
-        url: WALLETS.CREDIT_WALLET(walletReference),
+        url: WALLETS.CREDIT_WALLET(walletReference, amount),
         method: "POST",
-        params: { amount },
       }),
       transformResponse: (response: any) => response?.data || response,
       invalidatesTags: ['Wallet'],
     }),
     verifySufficientFunds: builder.query({
       query: ({ walletReference, amount }) => ({
-        url: WALLETS.VERIFY_FUNDS(walletReference),
+        url: WALLETS.VERIFY_SUFFICIENT_FUNDS(walletReference, amount),
         method: "GET",
-        params: { amount },
       }),
       transformResponse: (response: any) => response?.data || response,
     }),
     getBalance: builder.query({
       query: (walletReference: string) => ({
-        url: WALLETS.GET_BALANCE(walletReference),
+        url: WALLETS.GET_WALLET_BALANCE(walletReference),
         method: "GET",
       }),
       transformResponse: (response: any) => response?.data || response,

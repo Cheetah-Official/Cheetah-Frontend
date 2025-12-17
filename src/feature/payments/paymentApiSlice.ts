@@ -51,9 +51,9 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
     }),
     handlePaystackCallback: builder.query({
       query: ({ reference, trxref, response }) => ({
-        url: PAYSTACK.CALLBACK,
+        url: PAYSTACK.HANDLE_CALLBACK(reference, trxref),
         method: "GET",
-        params: { reference, trxref, response },
+        params: { response },
       }),
       transformResponse: (response: any) => response?.data || response,
     }),

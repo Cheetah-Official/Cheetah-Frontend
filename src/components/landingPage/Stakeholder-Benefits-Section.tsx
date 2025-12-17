@@ -70,7 +70,7 @@ export default function StakeholderBenefitsSection() {
 
                     {/* Register Button */}
                     <div className="bg-[#43434352] backdrop-blur-28 rounded-b-lg p-3 flex-shrink-0 -mt-1">
-                      <Link href="/transport" passHref>
+                      <Link href="/transport-signin" passHref>
                       <button className="w-full bg-[#800000] hover:bg-[#800000] cursor-pointer text-[#FFFFFF] font-medium py-3 px-4 rounded-lg transition-colors duration-200">
                         Register Transport Company
                       </button>

@@ -1,13 +1,32 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { FaTimes } from "react-icons/fa";
 import { useRouter, useSearchParams } from "next/navigation";
 // TODO: Replace with RTK Query hooks
 // import { useSearchSchedulesQuery } from "@/feature/schedules/scheduleApiSlice";
 
-export default function CompareResult() {
+type Route = {
+  schedule_id: string;
+  provider_name: string;
+  vehicle_type: string;
+  origin: string;
+  destination: string;
+  departure_time: string;
+  arrival_time: string;
+  duration_minutes: number;
+  available_seats: number;
+  total_seats: number;
+  amenities: string[];
+  base_price: number;
+};
+
+type CompareData = {
+  routes?: Route[];
+};
+
+function CompareResultContent() {
   const [passengers, setPassengers] = useState(1);
   const [departureDate, setDepartureDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
@@ -67,7 +86,7 @@ export default function CompareResult() {
   //   startDate: dateISO,
   //   endDate: dateISO, // Adjust as needed
   // });
-  const data = null; // TODO: Get from RTK Query
+  const data = null as CompareData | null; // TODO: Get from RTK Query
   const isLoading = false; // TODO: Get from RTK Query
   const isError = false; // TODO: Get from RTK Query
   const error = null; // TODO: Get from RTK Query
@@ -363,5 +382,13 @@ export default function CompareResult() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CompareResult() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <CompareResultContent />
+    </Suspense>
   );
 }

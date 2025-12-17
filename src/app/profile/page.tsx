@@ -8,10 +8,20 @@ import { useRouter } from "next/navigation";
 // import { logOut } from "@/feature/authentication/authSlice";
 import { clearAccessToken } from "@/lib/auth";
 
+type User = {
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  role?: string;
+  is_active?: boolean;
+  is_verified?: boolean;
+};
+
 export default function ProfilePage() {
   // TODO: Replace with RTK Query hook
   // const { data: user, isLoading, isError, error } = useGetAuthenticatedUserQuery();
-  const user = null; // TODO: Get from RTK Query
+  const user = null as User | null; // TODO: Get from RTK Query
   const isLoading = false; // TODO: Get from RTK Query
   const isError = false; // TODO: Get from RTK Query
   const error = null; // TODO: Get from RTK Query

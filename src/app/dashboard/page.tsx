@@ -1,30 +1,53 @@
 "use client"
 
 import Image from "next/image"
-import { FaBus, FaBell, FaCog, FaSignOutAlt, FaChevronRight, FaChevronLeft, FaUser, FaWifi, FaCheckCircle, FaExclamationTriangle, FaDownload, FaBars, FaTimes, FaEnvelope, FaPhone, FaHome, FaUserCircle, FaSlidersH, FaQuestionCircle, FaFileAlt, FaExchangeAlt, FaCalendarAlt } from "react-icons/fa"
+import { FaExchangeAlt, FaCalendarAlt, FaChevronLeft, FaChevronRight, FaExclamationTriangle, FaWifi, FaCheckCircle } from "react-icons/fa"
 import { useState, useEffect, Suspense } from "react"
-// TODO: Replace with RTK Query hooks
-// import { useGetBookingsByUserQuery } from "@/feature/bookings/bookingApiSlice";
-// import { useSelector } from "react-redux";
-// import { selectCurrentUser } from "@/feature/authentication/authSlice";
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/useAuth"
+import {
+  Sidebar,
+  DashboardHeader,
+  TransportsTab,
+  CompareTab,
+  CompareBookingView,
+  SettingsTab,
+} from "@/components/dashboard"
 
 const companies = [
-  { name: "Peace Mass", logo: "/PeaceMass-Logo.jpg" },
-  { name: "GIGM", logo: "/GIGMotors_Logo 1.png" },
-  { name: "GUO", logo: "/GUO.png" },
-  { name: "Chisco", logo: "/CHISCO.png" },
+  { name: "Peace Mass", logo: "/PeaceMass-Logo.jpg", price: 32000, route: "Lagos - Abuja" },
+  { name: "GIGM", logo: "/GIGMotors_Logo 1.png", price: 36000, route: "Lagos - Abuja" },
+  { name: "GUO", logo: "/GUO.png", price: 34000, route: "Lagos - Abuja" },
+  { name: "Chisco", logo: "/CHISCO.png", price: 26000, route: "Lagos - Abuja" },
 ]
+
+const compareCompanies = [
+  { name: "Peace Mass", logo: "/PeaceMass-Logo.jpg", price: 32000, route: "Lagos - Abuja" },
+  { name: "GIGM", logo: "/GIGMotors_Logo 1.png", price: 36000, route: "Lagos - Abuja" },
+  { name: "GUO", logo: "/GUO.png", price: 34000, route: "Lagos - Abuja" },
+  { name: "Chisco", logo: "/CHISCO.png", price: 26000, route: "Lagos - Abuja" },
+]
+
+const totalPages = 4
 
 function DashboardContent() {
   const [from, setFrom] = useState("")
   const [to, setTo] = useState("")
   const [departure, setDeparture] = useState("")
   const [returnDate, setReturnDate] = useState("")
-  const [passengers, setPassengers] = useState(1)
+  const [adults, setAdults] = useState(2)
+  const [children, setChildren] = useState(0)
   const [activeTab, setActiveTab] = useState("transports")
+  const [activeSettingsSubPage, setActiveSettingsSubPage] = useState("account")
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [selectedCompareCompany, setSelectedCompareCompany] = useState<any | null>(null)
+  const [chatMessage, setChatMessage] = useState("")
+  const [chatMessages, setChatMessages] = useState<Array<{ id: number; text: string; sender: "user" | "agent" }>>([
+    { id: 1, text: "Hello! How can I help you today?", sender: "agent" },
+    { id: 2, text: "I need help with my booking", sender: "user" },
+  ])
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, loading, error, signOut } = useAuth()
@@ -55,13 +78,21 @@ function DashboardContent() {
   useEffect(() => {
     const tab = searchParams.get("tab")
     if (tab) {
-      if (["transports", "activity", "settings"].includes(tab)) {
+      if (["transports", "activity", "settings", "compare"].includes(tab)) {
         setActiveTab(tab)
       } else if (tab === "notifications") {
         setActiveTab("activity")
       }
     }
   }, [searchParams])
+
+  // Set default values for Compare tab
+  useEffect(() => {
+    if (activeTab === "compare" && !from && !to) {
+      setFrom("Lagos")
+      setTo("Abuja")
+    }
+  }, [activeTab, from, to])
 
   // TODO: Replace with RTK Query hooks
   // Activity: fetch user's bookings to populate Activity tab
@@ -108,6 +139,10 @@ function DashboardContent() {
     }
   }
 
+  const totalPassengers = adults + children
+  const selectedPrice = 26000 // Default price, can be made dynamic based on selected transporter
+  const totalPrice = selectedPrice * totalPassengers
+
   const handleProceed = () => {
     if (!from || !to || !departure) {
       // Lightweight validation for demo purposes
@@ -119,7 +154,7 @@ function DashboardContent() {
       to,
       departure,
       returnDate,
-      passengers: String(passengers),
+      passengers: String(totalPassengers),
     })
     router.push(`/compare/result?${params.toString()}`)
   }
@@ -134,306 +169,154 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen flex bg-[#F9F9F9]">
-      {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside className={`fixed md:static inset-y-0 left-0 z-50 w-72 sm:w-80 md:w-64 lg:w-56 xl:w-64 2xl:w-72 bg-white border-r flex flex-col justify-between py-4 sm:py-6 md:py-8 px-3 sm:px-4 min-h-screen transform transition-transform duration-300 ease-in-out ${
-        mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-      }`}>
-        <div>
-          <div className="flex items-center justify-between mb-8 sm:mb-10 md:mb-12">
-            <button 
-              onClick={() => router.push("/")}
-              className="cursor-pointer hover:opacity-80 transition-opacity"
-              aria-label="Go to home page"
-            >
-              <Image src="/Cheetah 2.svg" alt="Cheetah" width={100} height={38} className="sm:w-[120px] sm:h-[45px]" />
-            </button>
-            <button 
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100"
-              onClick={() => setMobileMenuOpen(false)}
-              aria-label="Close menu"
-            >
-              <FaTimes className="text-gray-600 w-5 h-5" />
-            </button>
-          </div>
-          <nav className="space-y-2">
-            <button 
-              className={`flex items-center w-full px-3 py-2.5 sm:py-3 rounded-lg font-semibold gap-3 cursor-pointer transition-colors text-sm sm:text-base ${
-                activeTab === "transports" 
-                  ? "bg-[#8B2323] text-white" 
-                  : "text-[#8B2323] hover:bg-[#8B2323]/10"
-              }`}
-              onClick={() => {
-                setActiveTab("transports")
-                setMobileMenuOpen(false)
-              }}
-            >
-              <FaBus className="w-4 h-4 sm:w-5 sm:h-5" /> Transports
-            </button>
-            <button 
-              className={`flex items-center w-full px-3 py-2.5 sm:py-3 rounded-lg font-semibold gap-3 cursor-pointer transition-colors text-sm sm:text-base ${
-                activeTab === "activity" 
-                  ? "bg-[#8B2323] text-white" 
-                  : "text-[#8B2323] hover:bg-[#8B2323]/10"
-              }`}
-              onClick={() => {
-                setActiveTab("activity")
-                setMobileMenuOpen(false)
-              }}
-            >
-              <FaBell className="w-4 h-4 sm:w-5 sm:h-5" /> Notifications
-            </button>
-            <button 
-              className={`flex items-center w-full px-3 py-2.5 sm:py-3 rounded-lg font-semibold gap-3 cursor-pointer transition-colors text-sm sm:text-base ${
-                activeTab === "settings" 
-                  ? "bg-[#8B2323] text-white" 
-                  : "text-[#8B2323] hover:bg-[#8B2323]/10"
-              }`}
-              onClick={() => {
-                setActiveTab("settings")
-                setMobileMenuOpen(false)
-              }}
-            >
-              <FaCog className="w-4 h-4 sm:w-5 sm:h-5" /> Settings
-            </button>
-          </nav>
-        </div>
-        <button onClick={handleLogout} className="flex items-center gap-2 text-[#8B2323] mt-6 sm:mt-8 cursor-pointer text-sm sm:text-base">
-          <FaSignOutAlt className="w-4 h-4 sm:w-5 sm:h-5" /> Log out
-        </button>
-      </aside>
+      <Sidebar
+        activeTab={activeTab}
+        mobileMenuOpen={mobileMenuOpen}
+        onTabChange={setActiveTab}
+        onMobileMenuClose={() => setMobileMenuOpen(false)}
+        onLogout={handleLogout}
+      />
 
       {/* Main Content */}
       <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 xl:p-10 2xl:p-12 w-full">
         {loading && (
           <div className="text-center text-gray-600">Loading dashboard...</div>
         )}
-        {/* Mobile Header */}
-        <div className="flex items-center justify-between mb-4 sm:mb-6 md:hidden">
-          <button 
-            className="p-2 rounded-lg hover:bg-gray-100"
-            onClick={() => setMobileMenuOpen(true)}
-            aria-label="Open menu"
-          >
-            <FaBars className="text-gray-600 w-5 h-5" />
-          </button>
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-[#8B2323]">
-            <Image src="/Hero-2.jpeg" alt="User" width={32} height={32} className="sm:w-10 sm:h-10" />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-semibold text-[#8B2323]/80 flex items-center gap-2">
-            <span className="text-[#E08B2F] text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl">👋</span> Welcome, <span className="font-bold">{user ? user.first_name : ""}</span>
-          </h2>
-          <div className="hidden md:block w-10 h-10 lg:w-12 lg:h-12 xl:w-14 xl:h-14 rounded-full overflow-hidden border-2 border-[#8B2323]">
-            <Image src="/Hero-2.jpeg" alt="User" width={40} height={40} className="lg:w-12 lg:h-12 xl:w-14 xl:h-14" />
-          </div>
-        </div>
+        <DashboardHeader
+          userName={user?.first_name || ""}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onMobileMenuOpen={() => setMobileMenuOpen(true)}
+          showSearchBar={activeTab === "transports"}
+        />
 
         {/* Transports Tab */}
         {activeTab === "transports" && (
-          <div className="bg-[#F6F6F6] rounded-xl p-3 sm:p-4 md:p-6 lg:p-8 flex flex-col gap-3 sm:gap-4 md:gap-6">
-            {/* Filters */}
-            <div className="flex flex-col sm:flex-row items-end sm:items-end gap-3 sm:gap-4 mb-4 sm:mb-6">
-              <div className="flex flex-col gap-2 w-full sm:w-auto">
-                <span className="text-gray-700 text-xs sm:text-sm md:text-base font-medium">From</span>
-                <select value={from} onChange={e => setFrom(e.target.value)} className="px-3 sm:px-4 py-2.5 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] cursor-pointer w-full sm:w-40 text-sm sm:text-base shadow-sm h-[42px]" aria-label="Departure city">
-                  <option value="">Select City</option>
-                  <option value="Lagos">Lagos</option>
-                  <option value="Abuja">Abuja</option>
-                  <option value="Kano">Kano</option>
-                </select>
-              </div>
-              <button 
-                onClick={() => { const temp = from; setFrom(to); setTo(temp); }}
-                className="mb-0.5 sm:mb-0.5 flex-shrink-0"
-                aria-label="Swap cities"
-              >
-                <FaExchangeAlt className="text-[#E08B2F] w-5 h-5 sm:w-6 sm:h-6" />
-              </button>
-              <div className="flex flex-col gap-2 w-full sm:w-auto">
-                <span className="text-gray-700 text-xs sm:text-sm md:text-base font-medium">To</span>
-                <select value={to} onChange={e => setTo(e.target.value)} className="px-3 sm:px-4 py-2.5 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] cursor-pointer w-full sm:w-40 text-sm sm:text-base shadow-sm h-[42px]" aria-label="Destination city">
-                  <option value="">Select City</option>
-                  <option value="Lagos">Lagos</option>
-                  <option value="Abuja">Abuja</option>
-                  <option value="Kano">Kano</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-2 w-full sm:w-auto sm:ml-4">
-                <div className="flex items-center gap-2">
-                  <FaCalendarAlt className="text-gray-600 w-4 h-4" />
-                  <span className="text-gray-700 text-xs sm:text-sm md:text-base font-medium">Departure Date</span>
-                </div>
-                <input 
-                  type="date" 
-                  value={departure}
-                  onChange={(e) => setDeparture(e.target.value)}
-                  className="px-3 sm:px-4 py-2.5 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] w-full sm:w-40 md:w-44 font-medium text-sm sm:text-base shadow-sm h-[42px]" 
-                  placeholder="DD/MM/YYYY"
-                  aria-label="Departure Date"
+          <TransportsTab
+            from={from}
+            to={to}
+            departure={departure}
+            returnDate={returnDate}
+            adults={adults}
+            children={children}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            companies={Array.isArray((providerStats as any)?.providers) && (providerStats as any).providers.length > 0
+              ? (providerStats as any).providers.map((p: any) => ({ name: p.provider_name || p.name || 'Provider', logo: '/Logo.png', price: p.price || 26000 }))
+              : companies}
+            totalPrice={totalPrice}
+            onFromChange={setFrom}
+            onToChange={setTo}
+            onDepartureChange={setDeparture}
+            onReturnDateChange={setReturnDate}
+            onSwapCities={() => { const temp = from; setFrom(to); setTo(temp); }}
+            onAdultsChange={setAdults}
+            onChildrenChange={setChildren}
+            onPageChange={setCurrentPage}
+            onProceed={handleProceed}
+          />
+        )}
+
+        {/* Compare Tab */}
+        {activeTab === "compare" && (
+          <>
+            {selectedCompareCompany ? (
+              <div className="bg-white rounded-xl p-3 sm:p-4 md:p-6 lg:p-8 flex flex-col gap-4 sm:gap-6">
+                <CompareBookingView
+                  company={selectedCompareCompany}
+                  from={from || "Lagos"}
+                  to={to || "Abuja"}
+                  departure={departure}
+                  returnDate={returnDate}
+                  adults={adults}
+                  children={children}
+                  totalPrice={((selectedCompareCompany?.price as number | undefined) || 0) * totalPassengers}
+                  onDepartureChange={setDeparture}
+                  onReturnDateChange={setReturnDate}
+                  onAdultsChange={setAdults}
+                  onChildrenChange={setChildren}
+                  onProceed={handleProceed}
+                  onBack={() => setSelectedCompareCompany(null)}
                 />
-              </div>
-              <div className="flex flex-col gap-2 w-full sm:w-auto sm:ml-4">
-                <div className="flex items-center gap-2">
-                  <FaCalendarAlt className="text-gray-600 w-4 h-4" />
-                  <span className="text-gray-700 text-xs sm:text-sm md:text-base font-medium">Return Date <span className="text-xs text-[#E08B2F]">(if round trip)</span></span>
-                </div>
-                <input 
-                  type="date" 
-                  value={returnDate}
-                  onChange={(e) => setReturnDate(e.target.value)}
-                  className="px-3 sm:px-4 py-2.5 rounded-lg border bg-white text-gray-900 placeholder-gray-400 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] w-full sm:w-40 md:w-44 font-medium text-sm sm:text-base shadow-sm h-[42px]" 
-                  placeholder="DD/MM/YYYY"
-                  aria-label="Return Date"
-                />
-              </div>
             </div>
-
-            {/* Companies and Bus */}
-            <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8 items-start">
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 flex-1 w-full lg:w-auto">
-                {(Array.isArray((providerStats as any)?.providers) && (providerStats as any).providers.length > 0
-                  ? (providerStats as any).providers.map((p: any) => ({ name: p.provider_name || p.name || 'Provider', logo: '/Logo.png' }))
-                  : companies
-                ).slice(0, 4).map((company: any) => (
-                  <button key={company.name} className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-3 bg-white rounded-lg shadow-sm px-3 sm:px-4 py-3 sm:py-4 cursor-pointer border border-transparent hover:border-[#8B2323] hover:shadow-md transition-all">
-                    <Image src={company.logo} alt={company.name} width={40} height={40} className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
-                    <span className="font-semibold text-[#222] text-sm sm:text-base text-center sm:text-left">{company.name}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="flex-shrink-0 relative w-full lg:w-auto mt-4 lg:mt-0 self-center lg:self-start">
-                {/* Passenger Counter positioned in upper-right above bus */}
-                <div className="absolute -top-12 sm:-top-14 md:-top-16 -right-2 sm:-right-4 bg-white rounded-lg shadow-md px-3 sm:px-4 py-2 border border-gray-200 z-10">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <span className="text-gray-700 font-medium text-sm">Passenger</span>
-                    <div className="flex items-center bg-gray-100 rounded-lg border border-gray-300">
-                      <button type="button" className="px-2 sm:px-3 py-1 text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors text-sm font-semibold" onClick={() => setPassengers(p => Math.max(1, p - 1))} aria-label="Decrease passengers">-</button>
-                      <span className="px-3 sm:px-4 py-1 font-bold text-black text-sm sm:text-base">{passengers}</span>
-                      <button type="button" className="px-2 sm:px-3 py-1 text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors text-sm font-semibold" onClick={() => setPassengers(p => p + 1)} aria-label="Increase passengers">+</button>
-                    </div>
-                  </div>
-                </div>
-                <Image src="/Cheetah Bus Image 1.png" alt="Cheetah Bus" width={300} height={180} className="w-full max-w-[280px] sm:max-w-[320px] md:max-w-[360px] lg:w-[300px] lg:max-w-none h-auto object-contain mx-auto lg:mx-0" />
-              </div>
-            </div>
-
-            {/* Proceed Button */}
-            <div className="flex justify-center lg:justify-end mt-3 sm:mt-4 lg:mt-2">
-              <button onClick={handleProceed} className="bg-[#8B2323] text-white px-8 sm:px-10 md:px-12 py-3 sm:py-3.5 rounded-lg font-semibold text-base sm:text-lg md:text-xl cursor-pointer w-full sm:w-auto hover:bg-[#7A1F1F] transition-colors shadow-md">Proceed</button>
-            </div>
-
-            {/* Disclaimer */}
-            <div className="flex items-center gap-2 mt-4 sm:mt-6 text-xs sm:text-sm text-gray-600">
-              <FaExclamationTriangle className="text-[#E08B2F] w-4 h-4 flex-shrink-0" />
-              <span>Remember to confirm your travel details before proceeding</span>
-            </div>
-          </div>
+            ) : (
+              <CompareTab
+                from={from || "Lagos"}
+                to={to || "Abuja"}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                companies={compareCompanies}
+                selectedCompany={selectedCompareCompany}
+                onFromChange={setFrom}
+                onToChange={setTo}
+                onSwapCities={() => { const temp = from; setFrom(to); setTo(temp); }}
+                onPageChange={setCurrentPage}
+                onCompanySelect={setSelectedCompareCompany}
+                onCompare={handleProceed}
+              />
+            )}
+          </>
         )}
 
         {/* Settings Tab */}
         {activeTab === "settings" && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-            {/* Left Panel - Settings Categories */}
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Settings</h3>
-              
-              {/* Account Settings - Active */}
-              <div className="bg-gray-100 rounded-lg p-4 cursor-pointer hover:bg-gray-200 transition-colors">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-800">Account Settings</span>
-                  <FaChevronRight className="text-gray-500" />
-                </div>
-              </div>
-
-              {/* General Settings */}
-              <div className="bg-gray-100 rounded-lg p-4 cursor-pointer hover:bg-gray-200 transition-colors">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-800">General Settings</span>
-                  <FaChevronRight className="text-gray-500" />
-                </div>
-              </div>
-
-              {/* Help & Support */}
-              <div className="bg-gray-100 rounded-lg p-4 cursor-pointer hover:bg-gray-200 transition-colors">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-800">Help & Support</span>
-                  <FaChevronRight className="text-gray-500" />
-                </div>
-              </div>
-
-              {/* Terms & Policies */}
-              <div className="bg-gray-100 rounded-lg p-4 cursor-pointer hover:bg-gray-200 transition-colors">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-800">Terms & Policies</span>
-                  <FaChevronRight className="text-gray-500" />
-                </div>
-              </div>
-            </div>
-
-            {/* Right Panel - User Profile */}
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              <div className="text-center mb-6">
-                {/* Large Profile Picture */}
-                <div className="w-32 h-32 rounded-full overflow-hidden mx-auto mb-4 border-4 border-gray-200">
-                  <Image 
-                    src="/Hero-2.jpeg" 
-                    alt="User Profile" 
-                    width={128} 
-                    height={128}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                
-                {/* User Name */}
-                <h3 className="text-xl font-semibold text-gray-800">{user ? `${user.first_name} ${user.last_name}` : ""}</h3>
-              </div>
-
-              {/* Contact Information */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Image src="/Mail.png" alt="Email" width={14} height={14} className="w-3.5 h-3.5" />
-                    <span className="text-gray-700 font-medium">Email</span>
-                  </div>
-                  <span className="text-gray-500">{user?.email || ""}</span>
-                </div>
-                
-                <div className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Image src="/Phone.png" alt="Phone" width={14} height={14} className="w-3.5 h-3.5" />
-                    <span className="text-gray-700 font-medium">Phone Number</span>
-                  </div>
-                  <span className="text-gray-500">{user?.phone ?? ""}</span>
-                </div>
-                
-                <div className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Image src="/Address.png" alt="Address" width={14} height={14} className="w-3.5 h-3.5" />
-                    <span className="text-gray-700 font-medium">Home Address</span>
-                  </div>
-                  <span className="text-gray-500">&nbsp;</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <SettingsTab
+            activeSubPage={activeSettingsSubPage}
+            user={user ? {
+              first_name: user.first_name,
+              last_name: user.last_name,
+              email: user.email,
+              phone: user.phone || undefined,
+            } : null}
+            chatMessages={chatMessages}
+            chatMessage={chatMessage}
+            onSubPageChange={setActiveSettingsSubPage}
+            onChatMessageChange={setChatMessage}
+            onSendMessage={() => {
+              if (chatMessage.trim()) {
+                const newMessage = {
+                  id: chatMessages.length + 1,
+                  text: chatMessage,
+                  sender: "user" as const,
+                }
+                setChatMessages([...chatMessages, newMessage])
+                setChatMessage("")
+              }
+            }}
+          />
         )}
+
+        {/* Old duplicate Settings Tab code removed - using SettingsTab component now */}
 
         {/* Notifications Tab */}
         {activeTab === "activity" && (
           <div className="space-y-4 sm:space-y-6">
             <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">Notifications</h2>
             
-            {/* Grid Layout */}
+            {/* Check if user has bookings */}
+            {!activeBooking && (!userBookings || userBookings.length === 0) ? (
+              /* Empty State - No Bookings */
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:items-stretch">
+                {/* Top Left - Ticket Details Empty State */}
+                <div className="bg-[#F2F2F2] rounded-xl p-3 sm:p-4 shadow-sm flex flex-col items-center justify-center min-h-[200px]">
+                  <FaExclamationTriangle className="text-gray-400 w-12 h-12 sm:w-16 sm:h-16 mb-4" />
+                  <p className="text-sm sm:text-base text-gray-600 font-medium">No Ticket Details Yet</p>
+                </div>
+
+                {/* Bottom Left - Notification List Empty State */}
+                <div className="bg-[#F2F2F2] rounded-xl p-4 sm:p-6 shadow-sm flex flex-col items-center justify-center min-h-[200px]">
+                  <FaExclamationTriangle className="text-gray-400 w-12 h-12 sm:w-16 sm:h-16 mb-4" />
+                  <p className="text-sm sm:text-base text-gray-600 font-medium">No Notifications Yet</p>
+                </div>
+
+                {/* Right Column - Wi-Fi Code Empty State */}
+                <div className="bg-[#F2F2F2] rounded-xl p-4 sm:p-6 shadow-sm flex flex-col items-center justify-center min-h-[400px] lg:col-span-1 lg:row-span-2">
+                  <FaExclamationTriangle className="text-gray-400 w-12 h-12 sm:w-16 sm:h-16 mb-4" />
+                  <p className="text-sm sm:text-base text-gray-600 font-medium">No Notifications Yet</p>
+                </div>
+              </div>
+            ) : (
+              /* Content - User has bookings */
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:items-stretch">
               {/* Left Column - Stacked Cards */}
               <div className="flex flex-col gap-4 sm:gap-6 h-full">
@@ -659,6 +542,7 @@ function DashboardContent() {
                 </div>
               </div>
             </div>
+            )}
           </div>
         )}
       </main>
@@ -678,4 +562,4 @@ export default function DashboardPage() {
       <DashboardContent />
     </Suspense>
   )
-} 
+}

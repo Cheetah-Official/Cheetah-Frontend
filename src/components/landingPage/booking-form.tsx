@@ -1,7 +1,6 @@
 "use client";
 
-import type React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { Calendar, Building, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -232,7 +231,7 @@ export default function BookingForm({
               />
               <div
                 className="w-4 h-4 rounded-full border-2 flex items-center justify-center"
-                style={{ borderColor: "#1C1C1C80" }}
+                style={{ borderColor: "#A65555" }}
               >
                 {tripType === "one-way" && (
                   <div
@@ -301,33 +300,6 @@ export default function BookingForm({
           <div className="flex items-center space-x-2 text-white text-sm">
             <Building className="w-4 h-4" />
             <span>Transport Company</span>
-            <button
-              type="button"
-              onClick={() => {
-                // Check if form is filled
-                if (formData.from && formData.to && formData.departure) {
-                  // Redirect to signup page
-                  router.push('/signup');
-                } else {
-                  // If form not filled, show compare modal (original behavior)
-                  if (onCompareClick) {
-                    onCompareClick();
-                  }
-                }
-              }}
-              style={{
-                marginLeft: 12,
-                background: "#fff",
-                color: "#800000",
-                border: "none",
-                borderRadius: 6,
-                padding: "2px 10px",
-                fontSize: 13,
-                cursor: "pointer",
-              }}
-            >
-              Compare Transport
-            </button>
           </div>
           <div className="relative">
             <select

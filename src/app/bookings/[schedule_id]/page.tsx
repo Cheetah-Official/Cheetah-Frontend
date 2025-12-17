@@ -21,6 +21,21 @@ type PassengerForm = {
   email?: string;
 };
 
+type ScheduleData = {
+  origin?: string;
+  destination?: string;
+  departure_time?: string;
+  arrival_time?: string;
+  provider_name?: string;
+  provider?: string;
+  base_price?: number;
+  price?: number;
+  vehicle_type?: string;
+  duration_minutes?: number;
+  available_seats?: number;
+  total_seats?: number;
+};
+
 function BookingDetailsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -42,7 +57,7 @@ function BookingDetailsContent() {
   // Note: getScheduleDetails may need to use useGetScheduleByIdQuery if scheduleId is numeric
   // Or use a different endpoint if scheduleId is a string reference
   // const { data, isLoading, isError, error } = useGetScheduleByIdQuery(Number(scheduleId));
-  const data = null; // TODO: Get from RTK Query
+  const data = null as ScheduleData | null; // TODO: Get from RTK Query
   const isLoading = false; // TODO: Get from RTK Query
   const isError = false; // TODO: Get from RTK Query
   const error = null; // TODO: Get from RTK Query

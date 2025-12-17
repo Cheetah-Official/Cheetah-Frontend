@@ -47,18 +47,16 @@ export const scheduleApiSlice = apiSlice.injectEndpoints({
     }),
     updateScheduleStatus: builder.mutation({
       query: ({ id, status }) => ({
-        url: SCHEDULES.UPDATE_SCHEDULE_STATUS(id),
+        url: SCHEDULES.UPDATE_SCHEDULE_STATUS(id, status),
         method: "PATCH",
-        params: { status },
       }),
       transformResponse: (response: any) => response?.data || response,
       invalidatesTags: (result, error, { id }) => [{ type: 'Schedule', id }],
     }),
     checkSeatAvailability: builder.query({
       query: ({ id, requiredSeats }) => ({
-        url: SCHEDULES.CHECK_SEAT_AVAILABILITY(id),
+        url: SCHEDULES.CHECK_SEAT_AVAILABILITY(id, requiredSeats),
         method: "GET",
-        params: { requiredSeats },
       }),
       transformResponse: (response: any) => response?.data || response,
     }),
@@ -99,9 +97,8 @@ export const scheduleApiSlice = apiSlice.injectEndpoints({
     }),
     getAllSchedulesPaginated: builder.query({
       query: ({ page = 0, size = 50 }) => ({
-        url: SCHEDULES.GET_ALL_SCHEDULES_PAGINATED,
+        url: SCHEDULES.GET_PAGINATED_SCHEDULES(page, size),
         method: "GET",
-        params: { page, size },
       }),
       transformResponse: (response: any) => response?.data || response,
       providesTags: ['Schedule'],

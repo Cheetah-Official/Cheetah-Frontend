@@ -5,6 +5,11 @@ import { useSearchParams, useRouter } from "next/navigation";
 // TODO: Replace with RTK Query hooks
 // import { useVerifyPaystackTransactionQuery } from "@/feature/payments/paymentApiSlice";
 
+type PaymentVerificationResponse = {
+  status?: string;
+  message?: string;
+};
+
 function PaymentVerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -30,7 +35,7 @@ function PaymentVerifyContent() {
         setStatus("verifying");
         // TODO: Replace with RTK Query
         // const res = await paymentsApi.verifyPayment(paymentRef, provider); // REMOVED
-        const res = null; // TODO: Get from useVerifyPaystackTransactionQuery
+        const res = null as PaymentVerificationResponse | null; // TODO: Get from useVerifyPaystackTransactionQuery
         if (
           (res?.status || "").toLowerCase() === "success" ||
           (res?.message || "").toLowerCase().includes("success")

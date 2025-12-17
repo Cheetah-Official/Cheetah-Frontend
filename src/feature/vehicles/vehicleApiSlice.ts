@@ -47,9 +47,8 @@ export const vehicleApiSlice = apiSlice.injectEndpoints({
     }),
     updateVehicleStatus: builder.mutation({
       query: ({ id, status }) => ({
-        url: VEHICLES.UPDATE_VEHICLE_STATUS(id),
+        url: VEHICLES.UPDATE_VEHICLE_STATUS(id, status),
         method: "PATCH",
-        params: { status },
       }),
       transformResponse: (response: any) => response?.data || response,
       invalidatesTags: (result, error, { id }) => [{ type: 'Vehicle', id }],

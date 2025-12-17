@@ -103,14 +103,14 @@ export default function HeroSection() {
       <button
         onClick={prevSlide}
         title="Previous Slide"
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-200"
+        className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-200 cursor-pointer"
       >
         <ChevronLeft className="w-6 h-6 text-white" />
       </button>
       <button
         onClick={nextSlide}
         title="Next Slide"
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-200"
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-200 cursor-pointer"
       >
         <ChevronRight className="w-6 h-6 text-white" />
       </button>
@@ -122,7 +122,7 @@ export default function HeroSection() {
             key={index}
             onClick={() => setCurrentSlide(index)}
             title={`Go to slide ${index + 1}`}
-            className={`w-3 h-3 rounded-full transition-all duration-200 ${
+            className={`w-3 h-3 rounded-full transition-all duration-200 cursor-pointer ${
               index === currentSlide ? "bg-white" : "bg-white/50"
             }`}
           />
