@@ -147,6 +147,12 @@ export default function HeroSection() {
                 Discover a seamless way to book intercity buses and trains
                 across multiple providers — all in one place.{" "}
               </p>
+              <button
+                onClick={() => router.push("/signin")}
+                className="bg-[#8B2323] text-white px-8 py-3 rounded-lg font-semibold text-base md:text-lg hover:bg-[#7A1F1F] transition-colors cursor-pointer shadow-md"
+              >
+                Sign in
+              </button>
             </div>
 
             {/* Right Content - Booking Form */}

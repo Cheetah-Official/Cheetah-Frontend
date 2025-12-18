@@ -12,6 +12,7 @@ import {
   CompareTab,
   CompareBookingView,
   SettingsTab,
+  SeatAllocation,
 } from "@/components/dashboard"
 
 const companies = [
@@ -43,6 +44,7 @@ function DashboardContent() {
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedCompareCompany, setSelectedCompareCompany] = useState<any | null>(null)
+  const [showSeatAllocation, setShowSeatAllocation] = useState(false)
   const [chatMessage, setChatMessage] = useState("")
   const [chatMessages, setChatMessages] = useState<Array<{ id: number; text: string; sender: "user" | "agent" }>>([
     { id: 1, text: "Hello! How can I help you today?", sender: "agent" },
@@ -220,7 +222,18 @@ function DashboardContent() {
         {/* Compare Tab */}
         {activeTab === "compare" && (
           <>
-            {selectedCompareCompany ? (
+            {showSeatAllocation && selectedCompareCompany ? (
+              <SeatAllocation
+                company={selectedCompareCompany}
+                from={from || "Lagos"}
+                to={to || "Abuja"}
+                onBack={() => setShowSeatAllocation(false)}
+                onProceed={() => {
+                  // TODO: Navigate to payment/confirmation page
+                  console.log("Proceeding to payment...")
+                }}
+              />
+            ) : selectedCompareCompany ? (
               <div className="bg-white rounded-xl p-3 sm:p-4 md:p-6 lg:p-8 flex flex-col gap-4 sm:gap-6">
                 <CompareBookingView
                   company={selectedCompareCompany}
@@ -235,7 +248,7 @@ function DashboardContent() {
                   onReturnDateChange={setReturnDate}
                   onAdultsChange={setAdults}
                   onChildrenChange={setChildren}
-                  onProceed={handleProceed}
+                  onProceed={() => setShowSeatAllocation(true)}
                   onBack={() => setSelectedCompareCompany(null)}
                 />
             </div>
