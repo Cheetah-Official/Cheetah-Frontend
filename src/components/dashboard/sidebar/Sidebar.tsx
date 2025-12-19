@@ -47,7 +47,7 @@ export default function Sidebar({
               <Image src="/Cheetah 2.svg" alt="Cheetah" width={100} height={38} className="sm:w-[120px] sm:h-[45px]" />
             </button>
             <button 
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100 cursor-pointer"
               onClick={onMobileMenuClose}
               aria-label="Close menu"
             >

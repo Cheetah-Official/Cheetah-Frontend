@@ -20,7 +20,7 @@ export default function DashboardHeader({
       {/* Mobile Header */}
       <div className="flex items-center justify-between mb-4 sm:mb-6 md:hidden">
         <button 
-          className="p-2 rounded-lg hover:bg-gray-100"
+          className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer"
           onClick={onMobileMenuOpen}
           aria-label="Open menu"
         >
@@ -36,7 +36,7 @@ export default function DashboardHeader({
               className="pl-8 pr-28 py-1.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] text-sm w-64 sm:w-72 text-black placeholder:text-black"
             />
             <FaSearch className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
-            <button className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-[#8B2323] text-white px-6 py-1 rounded-lg font-semibold text-xs hover:bg-[#7A1F1F] transition-colors">
+            <button className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-[#8B2323] text-white px-6 py-1 rounded-lg font-semibold text-xs hover:bg-[#7A1F1F] transition-colors cursor-pointer">
               Search
             </button>
           </div>
@@ -58,7 +58,7 @@ export default function DashboardHeader({
                 className="pl-10 pr-32 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8B2323]/30 focus:border-[#8B2323] text-sm w-80 lg:w-96 text-black placeholder:text-black"
               />
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <button className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-[#8B2323] text-white px-8 py-1.5 rounded-lg font-semibold text-sm hover:bg-[#7A1F1F] transition-colors">
+              <button className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-[#8B2323] text-white px-8 py-1.5 rounded-lg font-semibold text-sm hover:bg-[#7A1F1F] transition-colors cursor-pointer">
                 Search
               </button>
             </div>

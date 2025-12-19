@@ -100,9 +100,9 @@ export default function SeatAllocation({
                 return (
                   <div
                     key={seat.number}
-                    className={`w-12 h-12 rounded-lg flex items-center justify-center text-sm font-semibold cursor-pointer transition-all ${
+                    className={`w-12 h-12 rounded-lg flex items-center justify-center text-sm font-semibold transition-all ${
                       seat.status === "open"
-                        ? "hover:bg-gray-400 text-gray-700"
+                        ? "hover:bg-gray-400 text-gray-700 cursor-pointer"
                         : "cursor-not-allowed"
                     } ${getSeatColor(seat.status)} ${
                       seat.status === "open" ? "text-gray-700" : "text-white"
@@ -124,9 +124,9 @@ export default function SeatAllocation({
                     return (
                       <div
                         key={seat.number}
-                        className={`w-12 h-12 rounded-lg flex items-center justify-center text-sm font-semibold cursor-pointer transition-all ${
+                        className={`w-12 h-12 rounded-lg flex items-center justify-center text-sm font-semibold transition-all ${
                           seat.status === "open"
-                            ? "hover:bg-gray-400 text-gray-700"
+                            ? "hover:bg-gray-400 text-gray-700 cursor-pointer"
                             : "cursor-not-allowed"
                         } ${getSeatColor(seat.status)} ${
                           seat.status === "open" ? "text-gray-700" : "text-white"
