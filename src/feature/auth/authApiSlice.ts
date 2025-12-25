@@ -26,6 +26,28 @@ export const authApiSlice = apiSlice.injectEndpoints({
         return response?.data || response;
       },
     }),
+    login: builder.mutation({
+      query: (data) => {
+        // /auth/login expects JSON { email, password } per updated spec
+        const requestConfig = {
+          url: AUTH.LOGIN,
+          method: "POST" as const,
+          body: {
+            email: data.email,
+            password: data.password,
+          },
+        };
+
+        console.log("Login request config:", { url: requestConfig.url, body: requestConfig.body });
+        return requestConfig;
+      },
+      transformResponse: (response: any) => {
+        console.log("Login transformResponse raw:", response);
+        const transformed = response?.data || response;
+        console.log("Login transformResponse transformed:", transformed);
+        return transformed;
+      },
+    }),
     refreshToken: builder.mutation({
       query: (data) => ({
         url: AUTH.REFRESH_TOKEN,
@@ -40,6 +62,7 @@ export const authApiSlice = apiSlice.injectEndpoints({
 export const {
   useGetAuthenticatedUserQuery,
   useRegisterUserMutation,
+  useLoginMutation,
   useRefreshTokenMutation,
 } = authApiSlice;
 

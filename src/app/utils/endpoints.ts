@@ -2,6 +2,7 @@
 export const AUTH = {
   GET_AUTHENTICATED_USER: "/auth", // GET /auth (same endpoint, different method)
   REGISTER_USER: "/auth", // POST /auth
+  LOGIN: "/auth/login", // POST /auth/login
   REFRESH_TOKEN: "/auth/refresh-token", // POST /auth/refresh-token
 };
 
@@ -24,26 +25,11 @@ export const SCHEDULES = {
   DELETE_SCHEDULE: (id: number) => `/api/schedules/${id}`, // DELETE /api/schedules/{id}
   UPDATE_SCHEDULE_STATUS: (id: number, status: string) => `/api/schedules/${id}/status?status=${status}`, // PATCH /api/schedules/{id}/status
   CHECK_SEAT_AVAILABILITY: (id: number, requiredSeats: number) => `/api/schedules/${id}/availability?requiredSeats=${requiredSeats}`, // GET /api/schedules/{id}/availability
-  GET_SCHEDULES_BY_TRIP: (tripId: number, page?: number, size?: number) => {
-    const params = new URLSearchParams();
-    if (page !== undefined) params.append('page', page.toString());
-    if (size !== undefined) params.append('size', size.toString());
-    return `/api/schedules/trip/${tripId}${params.toString() ? '?' + params.toString() : ''}`;
-  }, // GET /api/schedules/trip/{tripId}
+  GET_SCHEDULES_BY_TRIP: (tripId: number) => `/api/schedules/trip/${tripId}`, // GET /api/schedules/trip/{tripId}
   GET_SCHEDULES_BY_STATUS: (status: string) => `/api/schedules/status/${status}`, // GET /api/schedules/status/{status}
-  GET_PAGINATED_SCHEDULES_BY_STATUS: (companyId: number, status: string, page?: number, size?: number) => {
-    const params = new URLSearchParams();
-    if (page !== undefined) params.append('page', page.toString());
-    if (size !== undefined) params.append('size', size.toString());
-    return `/api/schedules/status/${companyId}/${status}/paginate${params.toString() ? '?' + params.toString() : ''}`;
-  }, // GET /api/schedules/status/{companyId}/{status}/paginate
-  SEARCH_SCHEDULES: (startDate: string, endDate: string) => `/api/schedules/search?startDate=${startDate}&endDate=${endDate}`, // GET /api/schedules/search
-  GET_PAGINATED_SCHEDULES: (page?: number, size?: number) => {
-    const params = new URLSearchParams();
-    if (page !== undefined) params.append('page', page.toString());
-    if (size !== undefined) params.append('size', size.toString());
-    return `/api/schedules/paginate${params.toString() ? '?' + params.toString() : ''}`;
-  }, // GET /api/schedules/paginate
+  GET_PAGINATED_SCHEDULES_BY_STATUS: (companyId: number, status: string) => `/api/schedules/status/${companyId}/${status}/paginate`, // GET /api/schedules/status/{companyId}/{status}/paginate
+  SEARCH_SCHEDULES: "/api/schedules/search", // GET /api/schedules/search
+  GET_PAGINATED_SCHEDULES: "/api/schedules/paginate", // GET /api/schedules/paginate
 };
 
 // Vehicle endpoints
@@ -58,48 +44,23 @@ export const VEHICLES = {
   GET_UNASSIGNED_VEHICLES_BY_TYPE: (companyId: number, vehicleType: string) => `/api/vehicles/list/${companyId}/unassigned-status/${vehicleType}`, // GET /api/vehicles/list/{companyId}/unassigned-status/{vehicleType}
   GET_ASSIGNED_VEHICLES_BY_TYPE: (companyId: number, vehicleType: string) => `/api/vehicles/list/${companyId}/assigned-status/${vehicleType}`, // GET /api/vehicles/list/{companyId}/assigned-status/{vehicleType}
   GET_VEHICLES_BY_COMPANY: (companyId: number) => `/api/vehicles/company/${companyId}`, // GET /api/vehicles/company/{companyId}
-  GET_VEHICLES_BY_COMPANY_AND_STATUS: (companyId: number, status: string, page?: number, size?: number) => {
-    const params = new URLSearchParams();
-    if (page !== undefined) params.append('page', page.toString());
-    if (size !== undefined) params.append('size', size.toString());
-    return `/api/vehicles/company/${companyId}/status/${status}${params.toString() ? '?' + params.toString() : ''}`;
-  }, // GET /api/vehicles/company/{companyId}/status/{status}
+  GET_VEHICLES_BY_COMPANY_AND_STATUS: (companyId: number, status: string) => `/api/vehicles/company/${companyId}/status/${status}`, // GET /api/vehicles/company/{companyId}/status/{status}
 };
 
 // Booking endpoints
 export const BOOKINGS = {
   CREATE_BOOKING: "/api/bookings", // POST /api/bookings
   GET_BOOKING_BY_ID: (id: number) => `/api/bookings/${id}`, // GET /api/bookings/{id}
-  GET_BOOKINGS_BY_USER: (userId: number, page?: number, size?: number) => {
-    const params = new URLSearchParams();
-    if (page !== undefined) params.append('page', page.toString());
-    if (size !== undefined) params.append('size', size.toString());
-    return `/api/bookings/user/${userId}${params.toString() ? '?' + params.toString() : ''}`;
-  }, // GET /api/bookings/user/{userId}
-  GET_BOOKINGS_BY_USER_AND_STATUS: (userId: number, status: string, page?: number, size?: number) => {
-    const params = new URLSearchParams();
-    if (page !== undefined) params.append('page', page.toString());
-    if (size !== undefined) params.append('size', size.toString());
-    return `/api/bookings/user/${userId}/status/${status}${params.toString() ? '?' + params.toString() : ''}`;
-  }, // GET /api/bookings/user/{userId}/status/{status}
-  GET_BOOKINGS_BY_SCHEDULE: (scheduleId: number, page?: number, size?: number) => {
-    const params = new URLSearchParams();
-    if (page !== undefined) params.append('page', page.toString());
-    if (size !== undefined) params.append('size', size.toString());
-    return `/api/bookings/schedule/${scheduleId}${params.toString() ? '?' + params.toString() : ''}`;
-  }, // GET /api/bookings/schedule/{scheduleId}
+  GET_BOOKINGS_BY_USER: (userId: number) => `/api/bookings/user/${userId}`, // GET /api/bookings/user/{userId}
+  GET_BOOKINGS_BY_USER_AND_STATUS: (userId: number, status: string) => `/api/bookings/user/${userId}/status/${status}`, // GET /api/bookings/user/{userId}/status/{status}
+  GET_BOOKINGS_BY_SCHEDULE: (scheduleId: number) => `/api/bookings/schedule/${scheduleId}`, // GET /api/bookings/schedule/{scheduleId}
   GET_BOOKING_BY_REFERENCE: (bookingRef: string) => `/api/bookings/reference/${bookingRef}`, // GET /api/bookings/reference/{bookingRef}
 };
 
 // Payment endpoints
 export const PAYMENTS = {
   GET_PAYMENT_BY_ID: (id: number) => `/api/payments/${id}`, // GET /api/payments/{id}
-  GET_PAYMENTS_BY_USER: (userId: number, page?: number, size?: number) => {
-    const params = new URLSearchParams();
-    if (page !== undefined) params.append('page', page.toString());
-    if (size !== undefined) params.append('size', size.toString());
-    return `/api/payments/user/${userId}${params.toString() ? '?' + params.toString() : ''}`;
-  }, // GET /api/payments/user/{userId}
+  GET_PAYMENTS_BY_USER: (userId: number) => `/api/payments/user/${userId}`, // GET /api/payments/user/{userId}
   GET_PAYMENT_BY_TRANSACTION_REF: (transactionRef: string) => `/api/payments/transaction/${transactionRef}`, // GET /api/payments/transaction/{transactionRef}
   GET_PAYMENT_BY_BOOKING: (bookingId: number) => `/api/payments/booking/${bookingId}`, // GET /api/payments/booking/{bookingId}
 };
@@ -117,18 +78,8 @@ export const RECEIPTS = {
   GET_RECEIPT_BY_ID: (id: number) => `/${id}`, // GET /{id}
   GET_RECEIPT_BY_TICKET_ID: (id: number) => `/${id}/ticket`, // GET /{id}/ticket
   GET_RECEIPT_BY_PAYMENT_ID: (id: number) => `/${id}/payment`, // GET /{id}/payment
-  GET_RECEIPTS_BY_USER: (userId: number, page?: number, size?: number) => {
-    const params = new URLSearchParams();
-    if (page !== undefined) params.append('page', page.toString());
-    if (size !== undefined) params.append('size', size.toString());
-    return `/user/${userId}${params.toString() ? '?' + params.toString() : ''}`;
-  }, // GET /user/{id}
-  GET_RECEIPTS_BY_COMPANY: (companyId: number, page?: number, size?: number) => {
-    const params = new URLSearchParams();
-    if (page !== undefined) params.append('page', page.toString());
-    if (size !== undefined) params.append('size', size.toString());
-    return `/company/${companyId}${params.toString() ? '?' + params.toString() : ''}`;
-  }, // GET /company/{id}
+  GET_RECEIPTS_BY_USER: (userId: number) => `/user/${userId}`, // GET /user/{id}
+  GET_RECEIPTS_BY_COMPANY: (companyId: number) => `/company/${companyId}`, // GET /company/{id}
 };
 
 // Wallet endpoints
@@ -152,4 +103,9 @@ export const PAYSTACK = {
     if (trxref) params.append('trxref', trxref);
     return `/api/v1/paystack/callback?${params.toString()}`;
   }, // GET /api/v1/paystack/callback
+};
+
+// Default endpoint
+export const DEFAULT = {
+  GET_DEFAULT_RESPONSE: "/default", // GET /default
 };

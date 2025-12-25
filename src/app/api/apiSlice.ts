@@ -9,7 +9,9 @@ const mutex = new Mutex();
 
 // Custom fetch function that handles both JSON and text responses
 const customFetch = async (url: string, options: RequestInit = {}) => {
+  console.log("Making request to:", url, "with options:", { method: options.method, headers: options.headers, hasBody: !!options.body });
   const response = await fetch(url, options);
+  console.log("Response status:", response.status, "Content-Type:", response.headers.get("content-type"));
   
   // Get content type
   const contentType = response.headers.get("content-type") || "";
@@ -71,16 +73,26 @@ const baseQueryWithAuth = async (args: any, api: any, extraOptions: any) => {
   // Construct the full URL
   const urlPath = typeof args === 'string' ? args : args.url;
   const url = urlPath.startsWith('http') ? urlPath : `${baseUrl}${urlPath.startsWith('/') ? '' : '/'}${urlPath}`;
+  console.log("baseQueryWithAuth - urlPath:", urlPath, "baseUrl:", baseUrl, "final url:", url);
+  
+  // Get custom headers if provided (for login, etc.)
+  const customHeaders = typeof args !== 'string' && args.headers ? args.headers : {};
+  const contentType = customHeaders['Content-Type'] || customHeaders['content-type'] || 'application/json';
+  
+  // Don't send Authorization header for login endpoint (we're authenticating)
+  const isLoginRequest = urlPath === '/login' || urlPath.includes('/login');
   
   const options: RequestInit = {
     method: typeof args === 'string' ? 'GET' : (args.method || 'GET'),
     headers: {
-      'Content-Type': 'application/json',
-      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-      ...(typeof args !== 'string' && args.headers),
+      'Content-Type': contentType,
+      ...(accessToken && !isLoginRequest && { Authorization: `Bearer ${accessToken}` }),
+      ...customHeaders,
     },
     credentials: 'include',
-    ...(typeof args !== 'string' && args.body && { body: typeof args.body === 'string' ? args.body : JSON.stringify(args.body) }),
+    ...(typeof args !== 'string' && args.body && { 
+      body: typeof args.body === 'string' ? args.body : (contentType === 'application/x-www-form-urlencoded' ? args.body : JSON.stringify(args.body))
+    }),
   };
   
   return customFetch(url, options);

@@ -1,6 +1,5 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -8,10 +7,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FaApple, FaGoogle, FaFacebookF, FaLock } from "react-icons/fa";
 import Image from "next/image";
-// TODO: Replace with RTK Query hooks
-// import { useRegisterUserMutation } from "@/feature/auth/authApiSlice";
-// import { useDispatch } from "react-redux";
-// import { setCredentials } from "@/feature/authentication/authSlice";
+import { useLoginMutation } from "@/feature/auth/authApiSlice";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "@/feature/authentication/authSlice";
 
 const SignInSchema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -22,22 +20,61 @@ type SignInForm = z.infer<typeof SignInSchema>;
 
 export default function SignInPage() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const { register, handleSubmit, formState: { errors } } = useForm<SignInForm>({ resolver: zodResolver(SignInSchema) });
 
-  const mutation = useMutation({
-    mutationFn: (payload: SignInForm) => {
-      // Store user data in localStorage for authentication
-      const userData = {
-        email: payload.email,
-        fullName: payload.email.split('@')[0], // Use email prefix as name
-      };
-      localStorage.setItem('user', JSON.stringify(userData));
-      return Promise.resolve({ success: true });
-    },
-    onSuccess: () => router.push("/dashboard"),
-  });
+  const [login, { isLoading, error }] = useLoginMutation();
 
-  const onSubmit = (data: SignInForm) => mutation.mutate(data);
+  const onSubmit = async (data: SignInForm) => {
+    try {
+      console.log("Attempting login with:", { email: data.email });
+      const response = await login(data).unwrap();
+      console.log("Login response:", response);
+      // Handle successful login response
+      const loginData = response?.data || response;
+      
+      // Only proceed if we have a valid response
+      if (!response && !loginData) {
+        throw new Error("Invalid login response");
+      }
+      
+      // Unwrap API shape: { success, data: { accessToken, refreshToken, ... } }
+      const payload = loginData?.data || loginData;
+
+      // Extract tokens and minimal user info
+      const accessToken = payload?.accessToken || payload?.token || payload?.access_token;
+      const refreshToken = payload?.refreshToken || payload?.refresh_token;
+      const user = payload?.user || {
+        email: payload?.email || data.email,
+        userType: payload?.userType,
+        userId: payload?.userId,
+      };
+      
+      // Only redirect if we have valid authentication (tokens or user data)
+      if (accessToken || refreshToken || (user && (user.email || user.userId || user.id))) {
+        dispatch(setCredentials({
+          accessToken: accessToken || null,
+          refreshToken: refreshToken || null,
+          user: user || { email: data.email },
+        }));
+        // Only redirect after successful authentication
+        router.push("/dashboard");
+      } else {
+        // No valid auth data received
+        throw new Error("Authentication failed - no valid credentials received");
+      }
+    } catch (err: any) {
+      // Error is handled by RTK Query and displayed below
+      console.error("Login failed:", err);
+      // Log more details about the error
+      if (err?.data) {
+        console.error("Error data:", err.data);
+      }
+      if (err?.status) {
+        console.error("Error status:", err.status);
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0A2384] p-1.5 sm:p-4">
@@ -80,15 +117,17 @@ export default function SignInPage() {
             />
             {errors.password && <p className="text-red-600 text-[10px] sm:text-xs mt-0">{errors.password.message}</p>}
           </div>
-          {mutation.isError && (
-            <div className="text-red-600 text-[10px] sm:text-xs mb-1" role="alert">{(mutation.error as any)?.message || "Failed to sign in"}</div>
+          {error && (
+            <div className="text-red-600 text-[10px] sm:text-xs mb-1" role="alert">
+              {(error as any)?.data?.message || (error as any)?.message || "Failed to sign in. Please check your credentials."}
+            </div>
           )}
           <button
             type="submit"
-            disabled={mutation.isPending}
+            disabled={isLoading}
             className="w-full bg-[#8B2323] text-white py-1.5 sm:py-2.5 rounded-md sm:rounded-lg font-semibold transition-all duration-200 hover:opacity-90 mb-1 sm:mb-1.5 cursor-pointer disabled:opacity-60 text-xs sm:text-sm"
           >
-            {mutation.isPending ? "Signing In..." : "Sign In"}
+            {isLoading ? "Signing In..." : "Sign In"}
           </button>
         </form>
         <div className="text-[10px] sm:text-sm text-gray-600 mt-0 mb-1 sm:mb-1.5 text-center">

@@ -97,8 +97,9 @@ export const scheduleApiSlice = apiSlice.injectEndpoints({
     }),
     getAllSchedulesPaginated: builder.query({
       query: ({ page = 0, size = 50 }) => ({
-        url: SCHEDULES.GET_PAGINATED_SCHEDULES(page, size),
+        url: SCHEDULES.GET_PAGINATED_SCHEDULES,
         method: "GET",
+        params: { page, size },
       }),
       transformResponse: (response: any) => response?.data || response,
       providesTags: ['Schedule'],

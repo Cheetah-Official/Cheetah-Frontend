@@ -5,6 +5,9 @@ import { FaExchangeAlt, FaCalendarAlt, FaChevronLeft, FaChevronRight, FaExclamat
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/useAuth"
+import { useDispatch, useSelector } from "react-redux"
+import { logOut, selectCurrentAccessToken, selectCurrentUser } from "@/feature/authentication/authSlice"
+import { useGetAuthenticatedUserQuery } from "@/feature/auth/authApiSlice"
 import {
   Sidebar,
   DashboardHeader,
@@ -51,8 +54,20 @@ function DashboardContent() {
     { id: 2, text: "I need help with my booking", sender: "user" },
   ])
   const router = useRouter()
+  const dispatch = useDispatch()
   const searchParams = useSearchParams()
-  const { user, loading, error, signOut } = useAuth()
+  const { user: useAuthUser, loading: useAuthLoading } = useAuth()
+  
+  // Check Redux state for authentication (more reliable)
+  const accessToken = useSelector(selectCurrentAccessToken)
+  const reduxUser = useSelector(selectCurrentUser)
+  const isAuthenticated = !!(accessToken || reduxUser)
+  const isLoading = useAuthLoading
+
+  // Fetch authenticated user profile (firstName/lastName/email) when authenticated
+  const { data: authUser, isFetching: authUserFetching } = useGetAuthenticatedUserQuery(undefined, {
+    skip: !isAuthenticated,
+  })
 
   // Format current date as DD/MM/YYYY
   const formatDate = (date: Date) => {
@@ -69,12 +84,15 @@ function DashboardContent() {
     setReturnDate("")
   }, [])
 
-  // Redirect unauthenticated users to signin
+  // Protect dashboard - redirect unauthenticated users to signin
   useEffect(() => {
-    if (!loading && !user) {
+    if (!isLoading && !isAuthenticated) {
       router.replace("/signin")
     }
-  }, [loading, user, router])
+  }, [isLoading, isAuthenticated, router])
+
+  // Use fetched auth user first, then Redux, then fallback to legacy hook
+  const user = authUser || reduxUser || useAuthUser
 
   // Pick up tab from query param for deep links (support legacy 'notifications' -> 'activity')
   useEffect(() => {
@@ -161,12 +179,11 @@ function DashboardContent() {
     router.push(`/compare/result?${params.toString()}`)
   }
 
-  const handleLogout = async () => {
-    try {
-      await signOut()
-    } finally {
-      router.replace("/signin")
-    }
+  const handleLogout = () => {
+    // Clear Redux auth state (this also clears localStorage via the reducer)
+    dispatch(logOut())
+    // Redirect to signin page
+    router.replace("/signin")
   }
 
   return (
@@ -181,11 +198,21 @@ function DashboardContent() {
 
       {/* Main Content */}
       <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 xl:p-10 2xl:p-12 w-full">
-        {loading && (
-          <div className="text-center text-gray-600">Loading dashboard...</div>
+        {(isLoading || !isAuthenticated) && (
+          <div className="text-center text-gray-600 py-8">
+            {isLoading ? "Loading dashboard..." : "Redirecting to sign in..."}
+          </div>
         )}
-        <DashboardHeader
-          userName={user?.first_name || ""}
+        {!isLoading && isAuthenticated && (
+          <>
+            <DashboardHeader
+          userName={
+            user?.lastName ||
+            user?.last_name ||
+            user?.firstName ||
+            user?.first_name ||
+            ""
+          }
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           onMobileMenuOpen={() => setMobileMenuOpen(true)}
@@ -557,6 +584,8 @@ function DashboardContent() {
             </div>
             )}
           </div>
+        )}
+          </>
         )}
       </main>
     </div>
