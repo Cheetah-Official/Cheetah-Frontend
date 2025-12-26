@@ -103,9 +103,18 @@ const baseQueryWithAuth = async (args: any, api: any, extraOptions: any) => {
   const customHeaders = typeof args !== 'string' && args.headers ? args.headers : {};
   const contentType = customHeaders['Content-Type'] || customHeaders['content-type'] || 'application/json';
   
-  // Don't send Authorization header for login endpoint (we're authenticating)
-  // Check if this is a login request - only exclude /auth/login, not /auth (which is GET profile)
-  const isLoginRequest = urlPath === '/auth/login' || urlPath.includes('/auth/login');
+  // Don't send Authorization header for authentication endpoints (login, registration)
+  // These endpoints don't require authentication since we're authenticating or registering
+  const isAuthEndpoint = 
+    urlPath === '/auth/login' || 
+    urlPath.includes('/auth/login') ||
+    urlPath === '/auth/person/register' ||
+    urlPath.includes('/auth/person/register') ||
+    urlPath === '/auth/transport/register' ||
+    urlPath.includes('/auth/transport/register') ||
+    urlPath === '/auth/admin/register' ||
+    urlPath.includes('/auth/admin/register') ||
+    (urlPath === '/auth' && typeof args !== 'string' && args.method === 'POST'); // POST /auth is registration
   
   // Build headers object
   const headers: Record<string, string> = {
@@ -113,24 +122,24 @@ const baseQueryWithAuth = async (args: any, api: any, extraOptions: any) => {
     ...customHeaders,
   };
   
-  // Add Authorization header if we have a token and it's not a login request
+  // Add Authorization header if we have a token and it's not an auth endpoint (login/register)
   // Double-check token availability right before adding header
   const finalToken = accessToken && accessToken.trim() !== '' ? accessToken.trim() : null;
-  if (finalToken && !isLoginRequest) {
+  if (finalToken && !isAuthEndpoint) {
     headers['Authorization'] = `Bearer ${finalToken}`;
     console.log("baseQueryWithAuth - ✓ Adding Authorization header for:", urlPath, "Token length:", finalToken.length);
   } else {
     // Try one more time to get token from localStorage if we still don't have it
-    if (!finalToken && typeof window !== 'undefined' && !isLoginRequest) {
+    if (!finalToken && typeof window !== 'undefined' && !isAuthEndpoint) {
       const lastChanceToken = localStorage.getItem('accessToken');
       if (lastChanceToken && lastChanceToken.trim() !== '') {
         headers['Authorization'] = `Bearer ${lastChanceToken.trim()}`;
         console.log("baseQueryWithAuth - ✓ Adding Authorization header (last chance) for:", urlPath, "Token length:", lastChanceToken.trim().length);
       } else {
-        console.error("baseQueryWithAuth - ✗ No Authorization header. Token:", !!finalToken, "Last chance token:", !!lastChanceToken, "isLoginRequest:", isLoginRequest, "urlPath:", urlPath);
+        console.log("baseQueryWithAuth - No Authorization header. Token:", !!finalToken, "Last chance token:", !!lastChanceToken, "isAuthEndpoint:", isAuthEndpoint, "urlPath:", urlPath);
       }
     } else {
-      console.log("baseQueryWithAuth - No Authorization header. Token:", !!finalToken, "isLoginRequest:", isLoginRequest, "urlPath:", urlPath);
+      console.log("baseQueryWithAuth - No Authorization header (auth endpoint). Token:", !!finalToken, "isAuthEndpoint:", isAuthEndpoint, "urlPath:", urlPath);
     }
   }
   

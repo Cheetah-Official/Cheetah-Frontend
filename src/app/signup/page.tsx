@@ -63,8 +63,47 @@ export default function SignupPage() {
 
       console.log("Registration payload:", payload);
       
-      // Call the registerPerson mutation
-      const response = await registerPerson(payload).unwrap();
+      // Call the registerPerson mutation - use result directly to handle errors better
+      const result = await registerPerson(payload);
+      
+      // Check if there's an error
+      if ('error' in result && result.error) {
+        const errorData = result.error as any;
+        const statusCode = errorData?.status;
+        const errorResponse = errorData?.data;
+        
+        let errorMessage = "Failed to create account. Please try again.";
+        
+        // Extract message from nested structure
+        if (errorResponse?.data?.message) {
+          errorMessage = errorResponse.data.message;
+        } else if (errorResponse?.message) {
+          errorMessage = errorResponse.message;
+        } else if (typeof errorResponse === 'string') {
+          errorMessage = errorResponse;
+        }
+        
+        // Handle 409 Conflict - email already registered
+        if (statusCode === 409) {
+          const messageLower = errorMessage.toLowerCase();
+          if (messageLower.includes('already') || messageLower.includes('registered') || messageLower.includes('exist')) {
+            errorMessage = "This email has already been registered. Please sign in instead.";
+          } else {
+            errorMessage = "Email already exists. Please use a different email or sign in.";
+          }
+        }
+        
+        setSubmitError(errorMessage);
+        return;
+      }
+      
+      // Success - extract data
+      const response = 'data' in result ? result.data : null;
+      
+      if (!response) {
+        setSubmitError("Registration failed. Please try again.");
+        return;
+      }
       
       console.log("Registration response:", response);
       
@@ -103,18 +142,9 @@ export default function SignupPage() {
       // Redirect to signin page after successful registration
       router.push('/signin');
     } catch (err: any) {
-      console.error("Registration error:", err);
-      console.error("Error details:", JSON.stringify(err, null, 2));
-      
-      // Extract error message from different possible error formats
-      const errorMessage = 
-        err?.data?.message || 
-        err?.data?.error || 
-        err?.message || 
-        err?.error || 
-        "Failed to create account. Please try again.";
-      
-      setSubmitError(errorMessage);
+      // Fallback error handler for unexpected errors
+      console.error("Unexpected registration error:", err);
+      setSubmitError("An unexpected error occurred. Please try again.");
     }
   }
 
