@@ -4,7 +4,7 @@ import Link from "next/link"
 import { FaApple, FaGoogle, FaFacebookF, FaLock } from "react-icons/fa"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { useRegisterUserMutation } from "@/feature/auth/authApiSlice";
+import { useRegisterPersonMutation } from "@/feature/auth/authApiSlice";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "@/feature/authentication/authSlice";
 import { useForm } from "react-hook-form"
@@ -14,7 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 export default function SignupPage() {
   const router = useRouter()
   const dispatch = useDispatch()
-  const [registerUser, { isLoading }] = useRegisterUserMutation()
+  const [registerPerson, { isLoading }] = useRegisterPersonMutation()
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const SignupSchema = z.object({
@@ -52,131 +52,69 @@ export default function SignupPage() {
       : nameParts[0] || "";
     
     try {
-
-      // Prepare registration payload based on Swagger spec
+      // Prepare registration payload for /auth/person/register
       const payload = {
         email: data.email,
         password: data.password,
-        usersType: "PERSON" as const,
-        personDto: {
-          firstName: firstName,
-          lastName: lastName,
-        },
+        firstName: firstName,
+        lastName: lastName,
+        phoneNumber: data.phone || undefined,
       };
 
-      // Use the mutation result directly instead of unwrap() to handle text responses
-      const result = await registerUser(payload);
+      console.log("Registration payload:", payload);
       
-      console.log("Registration result:", result);
-      
-      // Check if there's an error in the result
-      let response: any = null;
-      
-      if ('error' in result && result.error) {
-        const errorData = result.error as any;
-        
-        // Special handling: if status is PARSING_ERROR but originalStatus is 200 and data contains "success"
-        // This means the API returned text "saved successfully" which RTK Query tried to parse as JSON
-        if (errorData?.status === 'PARSING_ERROR' && 
-            errorData?.originalStatus === 200 && 
-            typeof errorData?.data === 'string' && 
-            errorData.data.toLowerCase().includes('success')) {
-          // It's actually a success! Use the data from the error
-          console.log("Parsing error but actually success - handling as success");
-          response = errorData.data;
-        } else {
-          // Real error
-          setSubmitError(errorData?.data?.message || errorData?.message || "Failed to create account");
-          return;
-        }
-      } else {
-        // Normal success - get data from result
-        response = 'data' in result ? result.data : null;
-      }
+      // Call the registerPerson mutation
+      const response = await registerPerson(payload).unwrap();
       
       console.log("Registration response:", response);
       
-      // Handle different response formats
-      // The API returns "saved successfully" as a string (200 OK)
+      // Response structure: { accessToken, refreshToken, tokenType, expiresIn, email, userType, userId, message, emailVerificationRequired }
       const userData = {
-        email: data.email,
+        email: response.email || data.email,
         fullName: data.fullName,
         phone: data.phone || undefined,
       };
+
+      // Store tokens and user data
+      const accessToken = response.accessToken || "";
+      const refreshToken = response.refreshToken || "";
       
-      // If response is a string (like "saved successfully"), treat it as success
-      if (typeof response === 'string' && response.toLowerCase().includes('success')) {
-        // Response is just a success message, create user object from form data
-        dispatch(setCredentials({
-          accessToken: "",
-          refreshToken: "",
-          user: {
-            ...userData,
-            id: "",
-            first_name: firstName,
-            last_name: lastName,
-          },
-        }));
-      } else if (response && typeof response === 'object') {
-        // Response is an object with user data
-        dispatch(setCredentials({
-          accessToken: response.accessToken || response.access_token || "",
-          refreshToken: response.refreshToken || response.refresh_token || "",
-          user: {
-            ...userData,
-            id: response.userId || response.user_id || response.id || response.user?.id || "",
-            first_name: response.first_name || response.user?.first_name || firstName,
-            last_name: response.last_name || response.user?.last_name || lastName,
-          },
-        }));
-      } else {
-        // Default: treat as success even if response format is unexpected
-        dispatch(setCredentials({
-          accessToken: "",
-          refreshToken: "",
-          user: {
-            ...userData,
-            id: "",
-            first_name: firstName,
-            last_name: lastName,
-          },
-        }));
+      if (accessToken) {
+        localStorage.setItem('accessToken', accessToken);
       }
+      if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
+      }
+
+      dispatch(setCredentials({
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        user: {
+          ...userData,
+          id: response.userId?.toString() || "",
+          first_name: firstName,
+          last_name: lastName,
+        },
+      }));
 
       localStorage.setItem('user', JSON.stringify(userData));
       reset();
-      router.push('/dashboard');
+      
+      // Redirect to signin page after successful registration
+      router.push('/signin');
     } catch (err: any) {
       console.error("Registration error:", err);
       console.error("Error details:", JSON.stringify(err, null, 2));
       
-      // Check if it's actually a success with text response
-      if (err?.data && typeof err.data === 'string' && err.data.toLowerCase().includes('success')) {
-        // It's actually a success! Handle it
-        const userData = {
-          email: data.email,
-          fullName: data.fullName,
-          phone: data.phone || undefined,
-        };
-        
-        dispatch(setCredentials({
-          accessToken: "",
-          refreshToken: "",
-          user: {
-            ...userData,
-            id: "",
-            first_name: firstName,
-            last_name: lastName,
-          },
-        }));
-        
-        localStorage.setItem('user', JSON.stringify(userData));
-        reset();
-        router.push('/dashboard');
-        return;
-      }
+      // Extract error message from different possible error formats
+      const errorMessage = 
+        err?.data?.message || 
+        err?.data?.error || 
+        err?.message || 
+        err?.error || 
+        "Failed to create account. Please try again.";
       
-      setSubmitError(err?.data?.message || err?.message || err?.error || "Failed to create account");
+      setSubmitError(errorMessage);
     }
   }
 

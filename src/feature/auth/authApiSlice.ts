@@ -26,6 +26,23 @@ export const authApiSlice = apiSlice.injectEndpoints({
         return response?.data || response;
       },
     }),
+    registerPerson: builder.mutation({
+      query: (data) => ({
+        url: AUTH.REGISTER_PERSON,
+        method: "POST",
+        body: {
+          email: data.email,
+          password: data.password,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phoneNumber: data.phoneNumber || undefined,
+        },
+      }),
+      transformResponse: (response: any) => {
+        // Response structure: { success: true, data: { accessToken, refreshToken, ... } }
+        return response?.data || response;
+      },
+    }),
     login: builder.mutation({
       query: (data) => {
         // /auth/login expects JSON { email, password } per updated spec
@@ -62,6 +79,7 @@ export const authApiSlice = apiSlice.injectEndpoints({
 export const {
   useGetAuthenticatedUserQuery,
   useRegisterUserMutation,
+  useRegisterPersonMutation,
   useLoginMutation,
   useRefreshTokenMutation,
 } = authApiSlice;

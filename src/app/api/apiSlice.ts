@@ -68,32 +68,87 @@ const customFetch = async (url: string, options: RequestInit = {}) => {
 
 const baseQueryWithAuth = async (args: any, api: any, extraOptions: any) => {
   const state = api.getState();
-  const accessToken = state.auth?.accessToken;
+  // Get access token - check localStorage first (most reliable), then Redux state
+  // This ensures we have the token even if Redux hasn't synced yet
+  let accessToken: string | null = null;
+  if (typeof window !== 'undefined') {
+    accessToken = localStorage.getItem('accessToken');
+    console.log("baseQueryWithAuth - localStorage token:", accessToken ? `Found (length: ${accessToken.length})` : "Not found");
+  }
+  // Fallback to Redux if localStorage doesn't have it
+  if (!accessToken) {
+    accessToken = state.auth?.accessToken || null;
+    console.log("baseQueryWithAuth - Redux token:", accessToken ? `Found (length: ${accessToken.length})` : "Not found");
+  }
+  
+  // Trim whitespace and ensure token is valid
+  if (accessToken) {
+    const originalLength = accessToken.length;
+    accessToken = accessToken.trim();
+    if (accessToken === '') {
+      console.warn("baseQueryWithAuth - Token was empty after trimming");
+      accessToken = null;
+    } else if (originalLength !== accessToken.length) {
+      console.warn("baseQueryWithAuth - Token had whitespace, trimmed");
+    }
+  } else {
+    console.warn("baseQueryWithAuth - No access token found in localStorage or Redux");
+  }
   
   // Construct the full URL
   const urlPath = typeof args === 'string' ? args : args.url;
   const url = urlPath.startsWith('http') ? urlPath : `${baseUrl}${urlPath.startsWith('/') ? '' : '/'}${urlPath}`;
-  console.log("baseQueryWithAuth - urlPath:", urlPath, "baseUrl:", baseUrl, "final url:", url);
   
   // Get custom headers if provided (for login, etc.)
   const customHeaders = typeof args !== 'string' && args.headers ? args.headers : {};
   const contentType = customHeaders['Content-Type'] || customHeaders['content-type'] || 'application/json';
   
   // Don't send Authorization header for login endpoint (we're authenticating)
-  const isLoginRequest = urlPath === '/login' || urlPath.includes('/login');
+  // Check if this is a login request - only exclude /auth/login, not /auth (which is GET profile)
+  const isLoginRequest = urlPath === '/auth/login' || urlPath.includes('/auth/login');
+  
+  // Build headers object
+  const headers: Record<string, string> = {
+    'Content-Type': contentType,
+    ...customHeaders,
+  };
+  
+  // Add Authorization header if we have a token and it's not a login request
+  // Double-check token availability right before adding header
+  const finalToken = accessToken && accessToken.trim() !== '' ? accessToken.trim() : null;
+  if (finalToken && !isLoginRequest) {
+    headers['Authorization'] = `Bearer ${finalToken}`;
+    console.log("baseQueryWithAuth - ✓ Adding Authorization header for:", urlPath, "Token length:", finalToken.length);
+  } else {
+    // Try one more time to get token from localStorage if we still don't have it
+    if (!finalToken && typeof window !== 'undefined' && !isLoginRequest) {
+      const lastChanceToken = localStorage.getItem('accessToken');
+      if (lastChanceToken && lastChanceToken.trim() !== '') {
+        headers['Authorization'] = `Bearer ${lastChanceToken.trim()}`;
+        console.log("baseQueryWithAuth - ✓ Adding Authorization header (last chance) for:", urlPath, "Token length:", lastChanceToken.trim().length);
+      } else {
+        console.error("baseQueryWithAuth - ✗ No Authorization header. Token:", !!finalToken, "Last chance token:", !!lastChanceToken, "isLoginRequest:", isLoginRequest, "urlPath:", urlPath);
+      }
+    } else {
+      console.log("baseQueryWithAuth - No Authorization header. Token:", !!finalToken, "isLoginRequest:", isLoginRequest, "urlPath:", urlPath);
+    }
+  }
   
   const options: RequestInit = {
     method: typeof args === 'string' ? 'GET' : (args.method || 'GET'),
-    headers: {
-      'Content-Type': contentType,
-      ...(accessToken && !isLoginRequest && { Authorization: `Bearer ${accessToken}` }),
-      ...customHeaders,
-    },
+    headers,
     credentials: 'include',
     ...(typeof args !== 'string' && args.body && { 
       body: typeof args.body === 'string' ? args.body : (contentType === 'application/x-www-form-urlencoded' ? args.body : JSON.stringify(args.body))
     }),
   };
+  
+  console.log("baseQueryWithAuth - Making request to:", url);
+  console.log("baseQueryWithAuth - Headers:", JSON.stringify(Object.keys(headers)));
+  console.log("baseQueryWithAuth - Has Authorization header:", !!headers['Authorization']);
+  if (headers['Authorization']) {
+    console.log("baseQueryWithAuth - Authorization header value:", headers['Authorization'].substring(0, 30) + "...");
+  }
   
   return customFetch(url, options);
 };
@@ -108,7 +163,11 @@ const baseQuery = async (args: any, api: any, extraOptions: any) => {
 
       try {
         const state = api.getState();
-        const refreshToken = state.auth?.refreshToken;
+        // Get refresh token from Redux state first, then fallback to localStorage
+        let refreshToken = state.auth?.refreshToken;
+        if (!refreshToken && typeof window !== 'undefined') {
+          refreshToken = localStorage.getItem('refreshToken');
+        }
         
         if (!refreshToken) {
           api.dispatch(logOut());

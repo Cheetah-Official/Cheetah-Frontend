@@ -30,38 +30,121 @@ export default function SignInPage() {
       console.log("Attempting login with:", { email: data.email });
       const response = await login(data).unwrap();
       console.log("Login response:", response);
-      // Handle successful login response
-      const loginData = response?.data || response;
+      console.log("Login response type:", typeof response);
       
-      // Only proceed if we have a valid response
-      if (!response && !loginData) {
-        throw new Error("Invalid login response");
+      // Response from RTK Query should already be an object
+      // transformResponse returns: response?.data || response
+      // So if API returns {success: true, data: {...}}, we get {success: true, data: {...}}
+      // Extract from response.data.accessToken
+      
+      console.log("Sign in - response type:", typeof response);
+      
+      // Handle both object and string responses
+      let responseData: any = null;
+      
+      if (typeof response === 'object' && response !== null) {
+        // Normal case: response is an object
+        responseData = response?.data;
+      } else if (typeof response === 'string') {
+        // Fallback: response is a string, try to extract token with regex
+        const tokenMatch = response.match(/"accessToken"\s*:\s*"([^"]+)"/);
+        const refreshTokenMatch = response.match(/"refreshToken"\s*:\s*"([^"]+)"/);
+        const emailMatch = response.match(/"email"\s*:\s*"([^"]+)"/);
+        const userIdMatch = response.match(/"userId"\s*:\s*(\d+)/);
+        
+        if (tokenMatch && tokenMatch[1]) {
+          console.log("Sign in - Extracted token from string using regex");
+          responseData = { 
+            accessToken: tokenMatch[1],
+            refreshToken: refreshTokenMatch?.[1] || null,
+            email: emailMatch?.[1] || null,
+            userId: userIdMatch ? parseInt(userIdMatch[1]) : null,
+          };
+        } else {
+          // Last resort: try to parse as JSON
+          try {
+            const parsed = JSON.parse(response);
+            responseData = parsed?.data || parsed;
+          } catch (e) {
+            console.warn("Sign in - Could not parse response string or extract token");
+          }
+        }
       }
       
-      // Unwrap API shape: { success, data: { accessToken, refreshToken, ... } }
-      const payload = loginData?.data || loginData;
-
-      // Extract tokens and minimal user info
-      const accessToken = payload?.accessToken || payload?.token || payload?.access_token;
-      const refreshToken = payload?.refreshToken || payload?.refresh_token;
-      const user = payload?.user || {
-        email: payload?.email || data.email,
-        userType: payload?.userType,
-        userId: payload?.userId,
-      };
+      console.log("Sign in - responseData:", responseData);
+      console.log("Sign in - responseData keys:", responseData ? Object.keys(responseData) : "null/undefined");
       
-      // Only redirect if we have valid authentication (tokens or user data)
-      if (accessToken || refreshToken || (user && (user.email || user.userId || user.id))) {
+      let accessToken: string | null = null;
+      let refreshToken: string | null = null;
+      let user: any = null;
+      
+      if (responseData && typeof responseData === 'object') {
+        accessToken = responseData.accessToken || responseData.access_token || null;
+        refreshToken = responseData.refreshToken || responseData.refresh_token || null;
+        user = {
+          email: responseData.email || responseData.user_email || data.email,
+          userId: responseData.userId || responseData.user_id,
+          userRole: responseData.userType || responseData.user_role,
+        };
+      } else {
+        // Fallback: maybe the data is at the top level
+        console.log("Sign in - Falling back to top-level extraction");
+        accessToken = response?.accessToken || response?.access_token || null;
+        refreshToken = response?.refreshToken || response?.refresh_token || null;
+        user = {
+          email: response?.email || response?.user_email || data.email,
+          userId: response?.userId || response?.user_id,
+          userRole: response?.userType || response?.user_role,
+        };
+      }
+      
+      console.log("Sign in - Final accessToken:", accessToken ? `✓ Found (length: ${accessToken.length})` : "✗ NOT FOUND");
+      
+      // Only redirect if we have a valid access token (required for API calls)
+      if (accessToken && accessToken.trim() !== '') {
+        const trimmedToken = accessToken.trim();
+        
+        // CRITICAL: Store token in localStorage FIRST, synchronously
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('accessToken', trimmedToken);
+          if (refreshToken) {
+            localStorage.setItem('refreshToken', refreshToken.trim());
+          }
+          // Verify immediately
+          const storedToken = localStorage.getItem('accessToken');
+          console.log("Sign in - Token stored and verified:", storedToken ? `✓ (length: ${storedToken.length})` : "✗ FAILED");
+          
+          if (!storedToken) {
+            throw new Error("Failed to store access token in localStorage");
+          }
+        }
+        
+        // Then store in Redux
         dispatch(setCredentials({
-          accessToken: accessToken || null,
-          refreshToken: refreshToken || null,
+          accessToken: trimmedToken,
+          refreshToken: refreshToken ? refreshToken.trim() : null,
           user: user || { email: data.email },
         }));
-        // Only redirect after successful authentication
+        
+        console.log("Sign in - Credentials stored in Redux and localStorage");
+        
+        // Small delay to ensure Redux state propagates
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Final verification before redirect
+        const finalCheck = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+        console.log("Sign in - Final token check before redirect:", finalCheck ? `✓ (length: ${finalCheck.length})` : "✗ MISSING");
+        
+        if (!finalCheck) {
+          throw new Error("Token was lost before redirect");
+        }
+        
+        // Only redirect after successful authentication with token
         router.push("/dashboard");
       } else {
-        // No valid auth data received
-        throw new Error("Authentication failed - no valid credentials received");
+        // No valid token received
+        console.error("Sign in - No valid token received. Response:", response);
+        throw new Error("Authentication failed - no access token received");
       }
     } catch (err: any) {
       // Error is handled by RTK Query and displayed below

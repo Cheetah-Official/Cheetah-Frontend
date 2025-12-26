@@ -61,13 +61,39 @@ function DashboardContent() {
   // Check Redux state for authentication (more reliable)
   const accessToken = useSelector(selectCurrentAccessToken)
   const reduxUser = useSelector(selectCurrentUser)
-  const isAuthenticated = !!(accessToken || reduxUser)
+  // Also check localStorage as fallback - this ensures we have the token even if Redux hasn't synced yet
+  const localStorageToken = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null
+  const effectiveToken = accessToken || localStorageToken
+  const hasToken = !!effectiveToken && effectiveToken.trim() !== ''
+  const isAuthenticated = !!(hasToken || reduxUser)
   const isLoading = useAuthLoading
 
-  // Fetch authenticated user profile (firstName/lastName/email) when authenticated
-  const { data: authUser, isFetching: authUserFetching } = useGetAuthenticatedUserQuery(undefined, {
-    skip: !isAuthenticated,
+  // Log token status for debugging
+  useEffect(() => {
+    console.log("Dashboard auth check - Redux token:", !!accessToken, "localStorage token:", !!localStorageToken, "hasToken:", hasToken);
+  }, [accessToken, localStorageToken, hasToken])
+
+  // Fetch authenticated user profile (firstName/lastName/email) when authenticated and token is available
+  const { data: authUser, isFetching: authUserFetching, error: authUserError } = useGetAuthenticatedUserQuery(undefined, {
+    skip: !hasToken,
   })
+  
+  // Debug: Log when query is executed
+  useEffect(() => {
+    if (!hasToken) {
+      console.log("Dashboard - Skipping profile fetch, no token. Redux:", !!accessToken, "localStorage:", !!localStorageToken);
+    } else {
+      console.log("Dashboard - Fetching profile with token. Redux:", !!accessToken, "localStorage:", !!localStorageToken, "effectiveToken length:", effectiveToken?.length);
+    }
+  }, [hasToken, accessToken, localStorageToken, effectiveToken])
+  
+  // Handle 401 errors from profile fetch - redirect to signin
+  useEffect(() => {
+    if (authUserError && (authUserError as any)?.status === 401) {
+      dispatch(logOut())
+      router.replace("/signin")
+    }
+  }, [authUserError, dispatch, router])
 
   // Format current date as DD/MM/YYYY
   const formatDate = (date: Date) => {
