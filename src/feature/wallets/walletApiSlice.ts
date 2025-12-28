@@ -19,14 +19,6 @@ export const walletApiSlice = apiSlice.injectEndpoints({
       transformResponse: (response: any) => response?.data || response,
       providesTags: (result, error, id) => [{ type: 'Wallet', id }],
     }),
-    getWalletByCompany: builder.query({
-      query: (companyId: number) => ({
-        url: WALLETS.GET_WALLET_BY_COMPANY(companyId),
-        method: "GET",
-      }),
-      transformResponse: (response: any) => response?.data || response,
-      providesTags: ['Wallet'],
-    }),
     debitWallet: builder.mutation({
       query: ({ walletReference, amount }) => ({
         url: WALLETS.DEBIT_WALLET(walletReference, amount),
@@ -63,7 +55,6 @@ export const walletApiSlice = apiSlice.injectEndpoints({
 export const {
   useCreateWalletMutation,
   useGetWalletByIdQuery,
-  useGetWalletByCompanyQuery,
   useDebitWalletMutation,
   useCreditWalletMutation,
   useVerifySufficientFundsQuery,
