@@ -17,6 +17,8 @@ const nextConfig: NextConfig = {
     };
     return config;
   },
+  // Turbopack config (empty to use webpack for now)
+  turbopack: {},
   // Enable React Strict Mode
   reactStrictMode: true,
   // Configure images
