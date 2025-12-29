@@ -4,6 +4,10 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { FaArrowRight, FaHome } from "react-icons/fa";
 import Image from "next/image";
+import { useDispatch, useSelector } from "react-redux";
+import { logOut, selectCurrentAccessToken, selectCurrentUser } from "@/feature/authentication/authSlice";
+import { useGetAuthenticatedUserQuery } from "@/feature/auth/authApiSlice";
+import { useEffect } from "react";
 
 export default function TransportLayout({
   children,
@@ -12,10 +16,29 @@ export default function TransportLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const dispatch = useDispatch();
+  const accessToken = useSelector(selectCurrentAccessToken);
+  const reduxUser = useSelector(selectCurrentUser);
+  const localStorageToken = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  const hasToken = !!(accessToken || localStorageToken);
+
+  const { data: authUser, error: authUserError } = useGetAuthenticatedUserQuery(undefined, {
+    skip: !hasToken,
+  });
+
+  useEffect(() => {
+    if (authUserError && (authUserError as any)?.status === 401) {
+      dispatch(logOut());
+      router.replace("/transport-signin");
+    }
+  }, [authUserError, dispatch, router]);
 
   const handleLogout = () => {
+    dispatch(logOut());
     localStorage.removeItem('user');
     localStorage.removeItem('transporter');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     router.push('/transport-signin');
   };
 
