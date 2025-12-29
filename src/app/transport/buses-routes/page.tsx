@@ -1,10 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { FaPlus, FaChevronRight, FaBus, FaExchangeAlt, FaTimes, FaChevronDown } from "react-icons/fa";
+import { useRouter } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
+import { logOut, selectCurrentAccessToken, selectCurrentUser } from "@/feature/authentication/authSlice";
+import { useGetAuthenticatedUserQuery } from "@/feature/auth/authApiSlice";
 
 export default function BusesRoutesPage() {
+  const router = useRouter();
+  const dispatch = useDispatch();
+  const accessToken = useSelector(selectCurrentAccessToken);
+  const reduxUser = useSelector(selectCurrentUser);
+  const localStorageToken = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  const hasToken = !!(accessToken || localStorageToken);
+
+  const { data: authUser, isFetching: authUserFetching, error: authUserError } = useGetAuthenticatedUserQuery(undefined, {
+    skip: !hasToken,
+  });
+
+  useEffect(() => {
+    if (authUserError && (authUserError as any)?.status === 401) {
+      dispatch(logOut());
+      router.replace("/transport-signin");
+    }
+  }, [authUserError, dispatch, router]);
+
+  // Get company name and code from authenticated user or Redux state
+  const companyName = authUser?.companyName || reduxUser?.companyName || "";
+  const companyCode = authUser?.companyCode || reduxUser?.companyCode || "";
+  
+  // Generate initials from company name
+  const getInitials = (name: string) => {
+    if (!name) return "";
+    return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 4);
+  };
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     registrationNumber: "",
@@ -135,14 +166,15 @@ export default function BusesRoutesPage() {
         <h1 className="text-xl font-medium text-gray-600">Buses & Routes</h1>
 
         <div className="flex items-center gap-4">
-          <span className="text-gray-600 text-sm">RC-TCF1234</span>
+          {companyCode && (
+            <span className="text-gray-600 text-sm">{companyCode}</span>
+          )}
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-full bg-[#8B2323] flex items-center justify-center">
-              <span className="text-white font-bold text-sm">GIGM</span>
+              <span className="text-white font-bold text-sm">
+                {authUserFetching ? "..." : getInitials(companyName)}
+              </span>
             </div>
-            {/* <div className="w-10 h-10 rounded-full bg-[#8B2323] flex items-center justify-center">
-              <span className="text-white font-bold text-sm">GIGM</span>
-            </div> */}
           </div>
         </div>
       </header>

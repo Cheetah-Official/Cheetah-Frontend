@@ -1,10 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { FaChevronRight, FaExchangeAlt } from "react-icons/fa";
+import { useRouter } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
+import { logOut, selectCurrentAccessToken, selectCurrentUser } from "@/feature/authentication/authSlice";
+import { useGetAuthenticatedUserQuery } from "@/feature/auth/authApiSlice";
 
 export default function TransportDashboard() {
+  const router = useRouter();
+  const dispatch = useDispatch();
+  const accessToken = useSelector(selectCurrentAccessToken);
+  const reduxUser = useSelector(selectCurrentUser);
+  const localStorageToken = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  const hasToken = !!(accessToken || localStorageToken);
+  
+  const { data: authUser, isFetching: authUserFetching, error: authUserError } = useGetAuthenticatedUserQuery(undefined, {
+    skip: !hasToken,
+  });
+
+  useEffect(() => {
+    if (authUserError && (authUserError as any)?.status === 401) {
+      dispatch(logOut());
+      router.replace("/transport-signin");
+    }
+  }, [authUserError, dispatch, router]);
+
+  // Get company name from authenticated user or Redux state
+  const companyName = authUser?.companyName || reduxUser?.companyName || "Transport Company";
+  const companyCode = authUser?.companyCode || reduxUser?.companyCode || "";
   const [busSeats, setBusSeats] = useState("18 Seats");
   const [from, setFrom] = useState("Lagos");
   const [to, setTo] = useState("Abuja");
@@ -100,13 +125,19 @@ export default function TransportDashboard() {
       <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2 text-gray-600">
           <span className="text-2xl">👋</span>
-          <h1 className="text-xl font-medium">Welcome to God is Good Motors</h1>
+          <h1 className="text-xl font-medium">
+            {authUserFetching ? "Loading..." : `Welcome ${companyName}`}
+          </h1>
         </div>
 
         <div className="flex items-center gap-4">
-          <span className="text-gray-600 text-sm">RC-TCF1234</span>
+          {companyCode && (
+            <span className="text-gray-600 text-sm">{companyCode}</span>
+          )}
           <div className="w-10 h-10 rounded-full bg-[#8B2323] flex items-center justify-center">
-            <span className="text-white font-bold text-sm">GIGM</span>
+            <span className="text-white font-bold text-sm">
+              {companyName.split(' ').map((word: string) => word[0]).join('').toUpperCase().slice(0, 4)}
+            </span>
           </div>
         </div>
       </header>
