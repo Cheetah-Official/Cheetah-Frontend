@@ -45,14 +45,19 @@ export const authApiSlice = apiSlice.injectEndpoints({
     }),
     login: builder.mutation({
       query: (data) => {
-        // /auth/login expects JSON { email, password } per updated spec
+        // /auth/login expects JSON { email, password } or { companyName, password } for transport
         const requestConfig = {
           url: AUTH.LOGIN,
           method: "POST" as const,
-          body: {
-            email: data.email,
-            password: data.password,
-          },
+          body: data.companyName
+            ? {
+                companyName: data.companyName,
+                password: data.password,
+              }
+            : {
+                email: data.email,
+                password: data.password,
+              },
         };
 
         console.log("Login request config:", { url: requestConfig.url, body: requestConfig.body });
@@ -60,9 +65,45 @@ export const authApiSlice = apiSlice.injectEndpoints({
       },
       transformResponse: (response: any) => {
         console.log("Login transformResponse raw:", response);
+        // Handle string responses (sometimes API returns JSON string)
+        if (typeof response === 'string') {
+          try {
+            const parsed = JSON.parse(response);
+            console.log("Login transformResponse parsed from string:", parsed);
+            return parsed?.data || parsed;
+          } catch (e) {
+            console.warn("Failed to parse string response:", e);
+            return response;
+          }
+        }
+        // Handle object responses - extract data if it exists
+        if (response && typeof response === 'object') {
+          if (response.data && typeof response.data === 'object') {
+            console.log("Login transformResponse extracted data:", response.data);
+            return response.data;
+          }
+        }
         const transformed = response?.data || response;
         console.log("Login transformResponse transformed:", transformed);
         return transformed;
+      },
+    }),
+    registerTransport: builder.mutation({
+      query: (data) => ({
+        url: AUTH.REGISTER_TRANSPORT,
+        method: "POST",
+        body: {
+          email: data.email,
+          password: data.password,
+          companyName: data.companyName,
+          companyCode: data.companyCode,
+          phoneNumber: data.phoneNumber,
+          address: data.address,
+        },
+      }),
+      transformResponse: (response: any) => {
+        // Response structure: { success: true, data: { accessToken, refreshToken, ... } }
+        return response?.data || response;
       },
     }),
     refreshToken: builder.mutation({
@@ -80,6 +121,7 @@ export const {
   useGetAuthenticatedUserQuery,
   useRegisterUserMutation,
   useRegisterPersonMutation,
+  useRegisterTransportMutation,
   useLoginMutation,
   useRefreshTokenMutation,
 } = authApiSlice;
