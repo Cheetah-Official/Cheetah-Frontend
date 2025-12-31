@@ -11,7 +11,6 @@ export default function Header({
 }) {
   const [fromCity, setFromCity] = useState("Lagos");
   const [toCity, setToCity] = useState("Abuja");
-
   const swapCities = () => {
     const temp = fromCity;
     setFromCity(toCity);
@@ -28,6 +27,7 @@ export default function Header({
             <div className="relative">
               <select
                 name="fromCity"
+                aria-label="Departure city"
                 value={fromCity}
                 onChange={(e) => setFromCity(e.target.value)}
                 className="px-4 py-2 bg-gray-100/90 backdrop-blur-sm rounded-lg text-gray-800 text-sm font-medium focus:ring-2 focus:ring-red-500 focus:outline-none transition-all duration-200 appearance-none pr-8"
@@ -54,6 +54,7 @@ export default function Header({
             <div className="relative">
               <select
                 name="toCity"
+                aria-label="Destination city"
                 value={toCity}
                 onChange={(e) => setToCity(e.target.value)}
                 className="px-4 py-2 bg-gray-100/90 backdrop-blur-sm rounded-lg text-gray-800 text-sm font-medium focus:ring-2 focus:ring-red-500 focus:outline-none transition-all duration-200 appearance-none pr-8"

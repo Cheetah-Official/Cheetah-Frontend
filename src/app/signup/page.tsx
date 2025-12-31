@@ -138,9 +138,9 @@ export default function SignupPage() {
 
       localStorage.setItem('user', JSON.stringify(userData));
       reset();
-      
-      // Redirect to signin page after successful registration
-      router.push('/signin');
+
+      // Redirect to dashboard after successful registration
+      router.push('/dashboard');
     } catch (err: any) {
       // Fallback error handler for unexpected errors
       console.error("Unexpected registration error:", err);

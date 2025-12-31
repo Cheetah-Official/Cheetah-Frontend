@@ -37,7 +37,7 @@ export default function Footer() {
               </div>
               <p className="text-gray-600 leading-relaxed text-sm">
                 One platform to search, compare, and <br /> book buses or trains
-                — with free <br /> insurance and Wi-Fi included.
+                 with free <br /> insurance and Wi-Fi included.
               </p>
             </div>
 

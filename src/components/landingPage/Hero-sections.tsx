@@ -145,7 +145,7 @@ export default function HeroSection() {
               </h1>
               <p className="text-lg md:text-xl text-white/90 max-w-lg">
                 Discover a seamless way to book intercity buses and trains
-                across multiple providers — all in one place.{" "}
+                across multiple providers  all in one place.{" "}
               </p>
               <button
                 onClick={() => router.push("/signin")}
