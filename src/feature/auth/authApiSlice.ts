@@ -27,20 +27,46 @@ export const authApiSlice = apiSlice.injectEndpoints({
       },
     }),
     registerPerson: builder.mutation({
-      query: (data) => ({
-        url: AUTH.REGISTER_PERSON,
-        method: "POST",
-        body: {
+      query: (data) => {
+        // API expects snake_case: first_name, last_name, phone
+        const body: any = {
           email: data.email,
           password: data.password,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          phoneNumber: data.phoneNumber || undefined,
-        },
-      }),
+          first_name: data.firstName,
+          last_name: data.lastName,
+        };
+        
+        // Only include phone if it's provided
+        if (data.phoneNumber) {
+          body.phone = data.phoneNumber;
+        }
+        
+        console.log("registerPerson request body:", body);
+        return {
+          url: AUTH.REGISTER_PERSON,
+          method: "POST",
+          body,
+        };
+      },
       transformResponse: (response: any) => {
-        // Response structure: { success: true, data: { accessToken, refreshToken, ... } }
-        return response?.data || response;
+        console.log("registerPerson transformResponse raw:", response);
+        // Handle different response formats
+        // The custom fetch already returns { data: ... }, so response here is the actual API response
+        // API might return: { data: { accessToken, refreshToken, ... } } or { accessToken, refreshToken, ... } directly
+        if (typeof response === 'string') {
+          try {
+            const parsed = JSON.parse(response);
+            console.log("registerPerson transformResponse parsed from string:", parsed);
+            return parsed?.data || parsed;
+          } catch (e) {
+            console.warn("registerPerson: Failed to parse string response:", e);
+            return response;
+          }
+        }
+        // If response has a data property, return that, otherwise return the whole response
+        const transformed = response?.data || response;
+        console.log("registerPerson transformResponse transformed:", transformed);
+        return transformed;
       },
     }),
     login: builder.mutation({

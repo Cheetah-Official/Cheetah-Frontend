@@ -66,24 +66,68 @@ export default function SignupPage() {
       // Call the registerPerson mutation - use result directly to handle errors better
       const result = await registerPerson(payload);
       
+      console.log("Registration result:", result);
+      
       // Check if there's an error
       if ('error' in result && result.error) {
         const errorData = result.error as any;
         const statusCode = errorData?.status;
         const errorResponse = errorData?.data;
         
+        console.error("Registration error - Full error object:", errorData);
+        console.error("Registration error - Status code:", statusCode);
+        console.error("Registration error - Error response:", errorResponse);
+        
         let errorMessage = "Failed to create account. Please try again.";
         
-        // Extract message from nested structure
-        if (errorResponse?.data?.message) {
-          errorMessage = errorResponse.data.message;
-        } else if (errorResponse?.message) {
-          errorMessage = errorResponse.message;
-        } else if (typeof errorResponse === 'string') {
-          errorMessage = errorResponse;
+        // Handle network errors (connection refused, failed to fetch, CORS, etc.)
+        if (errorData?.error && typeof errorData.error === 'string') {
+          const errorStr = errorData.error.toLowerCase();
+          if (errorStr.includes('failed to fetch')) {
+            // Check if it's a CORS error based on the error message or status
+            if (statusCode === 'FETCH_ERROR' || !statusCode) {
+              errorMessage = "CORS Error: The backend server is not allowing requests from this origin. Please configure CORS on the backend to allow http://localhost:3000";
+            } else {
+              errorMessage = "Network Error: Cannot connect to server. Please make sure the backend server is running on http://localhost:8000";
+            }
+            setSubmitError(errorMessage);
+            return;
+          } else if (errorStr.includes('connection refused')) {
+            errorMessage = "Cannot connect to server. Please make sure the backend server is running on http://localhost:8000";
+            setSubmitError(errorMessage);
+            return;
+          }
         }
         
-        // Handle 409 Conflict - email already registered
+        // Handle RTK Query serialized errors (like CORS)
+        if (statusCode === 'FETCH_ERROR' || (errorData?.originalStatus === undefined && !errorResponse && !statusCode)) {
+          // This is likely a CORS or network error
+          errorMessage = "CORS Error: The backend server needs to be configured to allow requests from http://localhost:3000. Please add CORS middleware to your backend server.";
+          setSubmitError(errorMessage);
+          return;
+        }
+        
+        // Extract message from nested structure - try multiple formats
+        if (errorResponse) {
+          if (typeof errorResponse === 'string') {
+            errorMessage = errorResponse;
+          } else if (errorResponse?.detail) {
+            errorMessage = errorResponse.detail;
+          } else if (errorResponse?.message) {
+            errorMessage = errorResponse.message;
+          } else if (errorResponse?.data?.message) {
+            errorMessage = errorResponse.data.message;
+          } else if (errorResponse?.data?.detail) {
+            errorMessage = errorResponse.data.detail;
+          } else if (Array.isArray(errorResponse?.detail)) {
+            // FastAPI validation errors format
+            errorMessage = errorResponse.detail.map((err: any) => err.msg || err.message || JSON.stringify(err)).join(', ');
+          } else if (errorResponse?.error) {
+            errorMessage = errorResponse.error;
+          }
+        }
+        
+        // Handle specific status codes
         if (statusCode === 409) {
           const messageLower = errorMessage.toLowerCase();
           if (messageLower.includes('already') || messageLower.includes('registered') || messageLower.includes('exist')) {
@@ -91,8 +135,17 @@ export default function SignupPage() {
           } else {
             errorMessage = "Email already exists. Please use a different email or sign in.";
           }
+        } else if (statusCode === 400) {
+          // Bad request - validation errors
+          if (!errorMessage.includes('already') && !errorMessage.includes('registered')) {
+            errorMessage = `Validation error: ${errorMessage}`;
+          }
+        } else if (statusCode === 422) {
+          // Unprocessable Entity - FastAPI validation errors
+          errorMessage = `Validation error: ${errorMessage}`;
         }
         
+        console.error("Registration error - Final error message:", errorMessage);
         setSubmitError(errorMessage);
         return;
       }
@@ -100,24 +153,38 @@ export default function SignupPage() {
       // Success - extract data
       const response = 'data' in result ? result.data : null;
       
+      console.log("Registration response:", response);
+      
       if (!response) {
-        setSubmitError("Registration failed. Please try again.");
+        console.error("No response data in result:", result);
+        setSubmitError("Registration failed. No response received from server.");
         return;
       }
       
-      console.log("Registration response:", response);
+      // Response structure might be:
+      // { accessToken, refreshToken, ... } OR
+      // { access_token, refresh_token, ... } OR
+      // { data: { accessToken, refreshToken, ... } }
       
-      // Response structure: { accessToken, refreshToken, tokenType, expiresIn, email, userType, userId, message, emailVerificationRequired }
+      // Handle both camelCase and snake_case token formats
+      const accessToken = response.accessToken || response.access_token || "";
+      const refreshToken = response.refreshToken || response.refresh_token || "";
+      const userId = response.userId || response.user_id || response.id || "";
+      const email = response.email || response.user_email || data.email;
+      
+      if (!accessToken) {
+        console.error("No access token in response:", response);
+        setSubmitError("Registration succeeded but no access token received. Please sign in.");
+        return;
+      }
+      
       const userData = {
-        email: response.email || data.email,
+        email: email,
         fullName: data.fullName,
         phone: data.phone || undefined,
       };
 
       // Store tokens and user data
-      const accessToken = response.accessToken || "";
-      const refreshToken = response.refreshToken || "";
-      
       if (accessToken) {
         localStorage.setItem('accessToken', accessToken);
       }
@@ -130,7 +197,7 @@ export default function SignupPage() {
         refreshToken: refreshToken,
         user: {
           ...userData,
-          id: response.userId?.toString() || "",
+          id: userId?.toString() || "",
           first_name: firstName,
           last_name: lastName,
         },

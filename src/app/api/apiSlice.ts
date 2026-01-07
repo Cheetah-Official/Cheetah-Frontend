@@ -216,7 +216,7 @@ const baseQuery = async (args: any, api: any, extraOptions: any) => {
 
 export const apiSlice = createApi({
   baseQuery,
-  tagTypes: ['Trip', 'Schedule', 'Vehicle', 'Booking', 'Payment', 'Ticket', 'Receipt', 'Wallet'],
+  tagTypes: ['Trip', 'Schedule', 'Vehicle', 'Booking', 'Payment', 'Ticket', 'Receipt', 'Wallet', 'Notification'],
   endpoints: (builder) => ({}),
 });
 
