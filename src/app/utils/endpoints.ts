@@ -95,13 +95,13 @@ export const SCHEDULES = {
     return `/api/schedules/trip/${tripId}${query ? `?${query}` : ''}`;
   }, // GET /api/schedules/trip/{tripId}
   GET_SCHEDULES_BY_STATUS: (status: string) => `/api/schedules/status/${status}`, // GET /api/schedules/status/{status}
-  GET_PAGINATED_SCHEDULES_BY_STATUS: (companyId: number, status: string, page?: number, size?: number) => {
+  GET_PAGINATED_SCHEDULES_BY_STATUS: (status: string, companyId: number, page?: number, size?: number) => {
     const params = new URLSearchParams();
     if (page !== undefined) params.append('page', page.toString());
     if (size !== undefined) params.append('size', size.toString());
     const query = params.toString();
-    return `/api/schedules/status/${companyId}/${status}/paginate${query ? `?${query}` : ''}`;
-  }, // GET /api/schedules/status/{companyId}/{status}/paginate
+    return `/api/schedules/status/${status}/${companyId}/paginate${query ? `?${query}` : ''}`;
+  }, // GET /api/schedules/status/{status}/{companyId}/paginate
   SEARCH_SCHEDULES: (startDate: string, endDate: string) => `/api/schedules/search?startDate=${startDate}&endDate=${endDate}`, // GET /api/schedules/search
   GET_PAGINATED_SCHEDULES: (page?: number, size?: number) => {
     const params = new URLSearchParams();

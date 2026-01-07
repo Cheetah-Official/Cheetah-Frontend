@@ -78,8 +78,8 @@ export const scheduleApiSlice = apiSlice.injectEndpoints({
       providesTags: ['Schedule'],
     }),
     getPaginatedSchedulesByStatus: builder.query({
-      query: ({ companyId, status, page = 0, size = 20 }) => ({
-        url: SCHEDULES.GET_PAGINATED_SCHEDULES_BY_STATUS(companyId, status),
+      query: ({ status, companyId, page = 0, size = 20 }) => ({
+        url: SCHEDULES.GET_PAGINATED_SCHEDULES_BY_STATUS(status, companyId),
         method: "GET",
         params: { page, size },
       }),

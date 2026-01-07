@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { FaArrowRight, FaHome } from "react-icons/fa";
+import { FaArrowRight, FaHome, FaBus } from "react-icons/fa";
 import Image from "next/image";
 import { useDispatch, useSelector } from "react-redux";
 import { logOut, selectCurrentAccessToken, selectCurrentUser } from "@/feature/authentication/authSlice";
@@ -89,6 +89,19 @@ export default function TransportLayout({
                   className={`w-5 h-5 ${pathname === "/transport/buses-routes" ? "opacity-100" : "opacity-60"}`} 
                 />
                 <span>Buses & Routes</span>
+              </button>
+            </Link>
+
+            <Link href="/transport/trips" className="w-full">
+              <button
+                className={`w-full flex items-center gap-3 px-4 py-3 font-medium cursor-pointer ${
+                  pathname === "/transport/trips"
+                    ? "bg-[#8B2323] text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                <FaBus className={`w-5 h-5 ${pathname === "/transport/trips" ? "text-white" : "text-gray-400"}`} />
+                <span>Trips</span>
               </button>
             </Link>
           </nav>
