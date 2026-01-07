@@ -44,6 +44,8 @@ function DashboardContent() {
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedCompareCompany, setSelectedCompareCompany] = useState<any | null>(null)
   const [showSeatAllocation, setShowSeatAllocation] = useState(false)
+  const [selectedTransportCompany, setSelectedTransportCompany] = useState<any | null>(null)
+  const [showTransportSeatAllocation, setShowTransportSeatAllocation] = useState(false)
   const [chatMessage, setChatMessage] = useState("")
   const [chatMessages, setChatMessages] = useState<Array<{ id: number; text: string; sender: "user" | "agent" }>>([
     { id: 1, text: "Hello! How can I help you today?", sender: "agent" },
@@ -208,6 +210,7 @@ function DashboardContent() {
   const [createBooking, { isLoading: creatingBooking }] = useCreateBookingMutation()
 
   // Fetch schedules using filter endpoint - filter by route and date if selected
+  // Show all available buses when no filters, or filtered buses when route is selected
   const { data: schedulesResponse, isLoading: loadingSchedules } = useFilterSchedulesQuery(
     {
       ...(from && { origin: from }),
@@ -217,7 +220,7 @@ function DashboardContent() {
       page: 0,
       size: 50,
     },
-    { skip: !hasToken || !from || !to } // Only fetch when both from and to are selected
+    { skip: !hasToken } // Fetch all schedules when authenticated, filter by route if provided
   );
   
   // Extract schedules from response
@@ -357,16 +360,34 @@ function DashboardContent() {
 
   const totalPassengers = adults + children
   
-  // Calculate price based on available providers
-  const selectedPrice = useMemo(() => {
+  // Calculate price based on selected transport company, or 0 if none selected
+  const totalPrice = useMemo(() => {
+    // For transports tab - show selected company price or 0
+    if (activeTab === "transports") {
+      if (selectedTransportCompany) {
+        return selectedTransportCompany.price || 0;
+      }
+      return 0; // No company selected, show 0
+    }
+    
+    // For compare tab - show selected company price or minimum from all providers
+    if (activeTab === "compare") {
+      if (selectedCompareCompany) {
+        return selectedCompareCompany.price || 0;
+      }
+      if (providerStats && Array.isArray(providerStats.providers) && providerStats.providers.length > 0) {
+        // Use minimum price from available providers
+        return Math.min(...providerStats.providers.map((p: any) => p.price || 0));
+      }
+      return 0;
+    }
+    
+    // Default: calculate based on available providers
     if (providerStats && Array.isArray(providerStats.providers) && providerStats.providers.length > 0) {
-      // Use minimum price from available providers
       return Math.min(...providerStats.providers.map((p: any) => p.price || 0));
     }
-    return 0; // No price if no providers available
-  }, [providerStats]);
-  
-  const totalPrice = selectedPrice * totalPassengers
+    return 0;
+  }, [activeTab, selectedTransportCompany, selectedCompareCompany, providerStats]);
 
   const handleProceed = () => {
     if (!from || !to || !departure) {
@@ -374,11 +395,7 @@ function DashboardContent() {
       alert("Please select From, To and Departure date")
       return
     }
-    if (totalPassengers === 0) {
-      alert("Please select at least one passenger")
-      return
-    }
-    if (selectedPrice === 0 || !providerStats || !Array.isArray(providerStats.providers) || providerStats.providers.length === 0) {
+    if (totalPrice === 0 || !providerStats || !Array.isArray(providerStats.providers) || providerStats.providers.length === 0) {
       alert("No available transporters found for this route. Please try a different route.")
       return
     }
@@ -434,31 +451,107 @@ function DashboardContent() {
 
         {/* Transports Tab */}
         {activeTab === "transports" && (
-          <TransportsTab
-            from={from}
-            to={to}
-            departure={departure}
-            returnDate={returnDate}
-            adults={adults}
-            children={children}
-            currentPage={currentPage}
-            totalPages={calculatedTotalPages}
-            companies={
-              loadingSchedules
-                ? []
-                : providerCompanies
-            }
-            totalPrice={totalPrice}
-            onFromChange={setFrom}
-            onToChange={setTo}
-            onDepartureChange={setDeparture}
-            onReturnDateChange={setReturnDate}
-            onSwapCities={() => { const temp = from; setFrom(to); setTo(temp); }}
-            onAdultsChange={setAdults}
-            onChildrenChange={setChildren}
-            onPageChange={setCurrentPage}
-            onProceed={handleProceed}
-          />
+          <>
+            {showTransportSeatAllocation && selectedTransportCompany ? (
+              <SeatAllocation
+                company={selectedTransportCompany}
+                from={from || "Lagos"}
+                to={to || "Abuja"}
+                onBack={() => setShowTransportSeatAllocation(false)}
+                onProceed={async ({ scheduleId, seatNumber }) => {
+                  if (!user) {
+                    alert("Please sign in again to complete your booking.")
+                    router.replace("/signin")
+                    return
+                  }
+
+                  const userId = (user as any)?.id || (user as any)?.userId
+                  if (!userId) {
+                    alert("Unable to determine your user ID. Please sign in again.")
+                    router.replace("/signin")
+                    return
+                  }
+
+                  try {
+                    const res: any = await createBooking({
+                      scheduleId,
+                      userId,
+                      seatNumber: String(seatNumber),
+                    }).unwrap()
+
+                    const paymentLink =
+                      res?.paymentLink ||
+                      res?.data?.paymentLink
+
+                    if (paymentLink) {
+                      // Redirect directly to Flutterwave payment link
+                      window.location.href = paymentLink
+                    } else {
+                      alert("Booking created, but payment link was not returned.")
+                    }
+                  } catch (err: any) {
+                    console.error("Error creating booking:", err)
+                    alert(
+                      err?.data?.message ||
+                        "Failed to create booking. Please try again.",
+                    )
+                  }
+                }}
+              />
+            ) : selectedTransportCompany ? (
+              <div className="bg-white rounded-xl p-3 sm:p-4 md:p-6 lg:p-8 flex flex-col gap-4 sm:gap-6">
+                <CompareBookingView
+                  company={selectedTransportCompany}
+                  from={from || "Lagos"}
+                  to={to || "Abuja"}
+                  departure={departure}
+                  returnDate={returnDate}
+                  totalPrice={0}
+                  onDepartureChange={setDeparture}
+                  onReturnDateChange={setReturnDate}
+                  onProceed={(selectedSchedule) => {
+                    if (selectedSchedule) {
+                      // Update the company with the selected schedule
+                      setSelectedTransportCompany({
+                        ...selectedTransportCompany,
+                        primarySchedule: selectedSchedule,
+                      });
+                    }
+                    setShowTransportSeatAllocation(true);
+                  }}
+                  onBack={() => setSelectedTransportCompany(null)}
+                />
+              </div>
+            ) : (
+              <TransportsTab
+                from={from}
+                to={to}
+                departure={departure}
+                returnDate={returnDate}
+                adults={adults}
+                children={children}
+                currentPage={currentPage}
+                totalPages={calculatedTotalPages}
+                companies={
+                  loadingSchedules
+                    ? []
+                    : providerCompanies
+                }
+                totalPrice={totalPrice}
+                selectedCompany={selectedTransportCompany}
+                onFromChange={setFrom}
+                onToChange={setTo}
+                onDepartureChange={setDeparture}
+                onReturnDateChange={setReturnDate}
+                onSwapCities={() => { const temp = from; setFrom(to); setTo(temp); }}
+                onAdultsChange={setAdults}
+                onChildrenChange={setChildren}
+                onPageChange={setCurrentPage}
+                onCompanySelect={setSelectedTransportCompany}
+                onProceed={handleProceed}
+              />
+            )}
+          </>
         )}
 
         {/* Compare Tab */}

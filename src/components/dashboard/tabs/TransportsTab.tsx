@@ -21,6 +21,7 @@ type TransportsTabProps = {
   totalPages: number
   companies: Company[]
   totalPrice: number
+  selectedCompany: Company | null
   onFromChange: (value: string) => void
   onToChange: (value: string) => void
   onDepartureChange: (value: string) => void
@@ -29,6 +30,7 @@ type TransportsTabProps = {
   onAdultsChange: (value: number) => void
   onChildrenChange: (value: number) => void
   onPageChange: (page: number) => void
+  onCompanySelect: (company: Company) => void
   onProceed: () => void
 }
 
@@ -43,6 +45,7 @@ export default function TransportsTab({
   totalPages,
   companies,
   totalPrice,
+  selectedCompany,
   onFromChange,
   onToChange,
   onDepartureChange,
@@ -51,6 +54,7 @@ export default function TransportsTab({
   onAdultsChange,
   onChildrenChange,
   onPageChange,
+  onCompanySelect,
   onProceed,
 }: TransportsTabProps) {
   return (
@@ -123,94 +127,54 @@ export default function TransportsTab({
       </div>
 
       {/* Companies and Bus */}
-      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8 items-start">
-        {/* Transporters Section */}
-        <div className="flex-1 w-full lg:w-auto">
-          <div className="flex items-center gap-2 mb-4 sm:mb-5">
-            <h3 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-700">Transporters</h3>
+      {!selectedCompany && (
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8 items-start">
+          {/* Transporters Section */}
+          <div className="flex-1 w-full lg:w-auto">
+            <div className="flex items-center gap-2 mb-4 sm:mb-5">
+              <h3 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-700">Transporters</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-4 sm:gap-5 mb-6">
+              {companies.slice((currentPage - 1) * 4, currentPage * 4).map((company) => (
+                <TransporterCard 
+                  key={company.name}
+                  company={company}
+                  from={from}
+                  to={to}
+                  onClick={() => onCompanySelect(company)}
+                />
+              ))}
+            </div>
+            <Pagination 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={onPageChange}
+            />
           </div>
-          <div className="grid grid-cols-2 gap-4 sm:gap-5 mb-6">
-            {companies.slice((currentPage - 1) * 4, currentPage * 4).map((company) => (
-              <TransporterCard 
-                key={company.name}
-                company={company}
-              />
-            ))}
-          </div>
-          <Pagination 
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={onPageChange}
-          />
-        </div>
 
-        {/* Passengers and Vehicle Section */}
+        {/* Vehicle Section */}
         <div className="flex-shrink-0 w-full lg:w-auto mt-4 lg:mt-0">
-          <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">Passengers</h3>
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4">
-            <div className="flex items-center gap-3 sm:gap-4 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3">
-              <span className="text-gray-700 font-medium text-sm sm:text-base">Adult</span>
-              <div className="flex items-center rounded-lg border">
-                <button 
-                  type="button" 
-                  className="px-2 py-1 bg-[#606060] text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors text-sm font-semibold rounded-l-lg" 
-                  onClick={() => onAdultsChange(Math.max(1, adults - 1))} 
-                  aria-label="Decrease adults"
-                >
-                  -
-                </button>
-                <span className="px-2.5 py-1 font-bold text-black text-sm sm:text-base min-w-[2rem] text-center">{adults}</span>
-                <button 
-                  type="button" 
-                  className="px-2 py-1 bg-[#606060] text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors text-sm font-semibold rounded-r-lg" 
-                  onClick={() => onAdultsChange(adults + 1)} 
-                  aria-label="Increase adults"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 sm:gap-4 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3">
-              <span className="text-gray-700 font-medium text-sm sm:text-base">Children</span>
-              <div className="flex items-center rounded-lg border">
-                <button 
-                  type="button" 
-                  className="px-2 py-1 bg-[#606060] text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors text-sm font-semibold rounded-l-lg" 
-                  onClick={() => onChildrenChange(Math.max(0, children - 1))} 
-                  aria-label="Decrease children"
-                >
-                  -
-                </button>
-                <span className="px-2.5 py-1 font-bold text-black text-sm sm:text-base min-w-[2rem] text-center">{children}</span>
-                <button 
-                  type="button" 
-                  className="px-2 py-1 bg-[#606060] text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors text-sm font-semibold rounded-r-lg" 
-                  onClick={() => onChildrenChange(children + 1)} 
-                  aria-label="Increase children"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
           <div className="rounded-lg p-4">
             <Image src="/Cheetah Bus Image 1.png" alt="Cheetah Bus" width={300} height={180} className="w-full max-w-[280px] sm:max-w-[320px] md:max-w-[360px] lg:w-[300px] lg:max-w-none h-auto object-contain mx-auto" />
           </div>
-          <div className="text-center">
+          {/* <div className="text-center">
             <p className="text-green-600 font-bold text-2xl sm:text-3xl ml-36">N{totalPrice.toLocaleString()}</p>
-          </div>
+          </div> */}
         </div>
-      </div>
 
-      {/* Proceed Button */}
-      <div className="flex justify-center lg:justify-end mt-3 sm:mt-4 lg:mt-2">
-        <button 
-          onClick={onProceed} 
-          className="bg-[#8B2323] text-white px-8 sm:px-10 md:px-12 py-3 sm:py-3.5 rounded-lg font-semibold text-base sm:text-lg md:text-xl cursor-pointer w-full sm:w-auto hover:bg-[#7A1F1F] transition-colors shadow-md"
-        >
-          Proceed
-        </button>
-      </div>
+          {/* Proceed Button - Only show when no company is selected */}
+          {!selectedCompany && (
+            <div className="flex justify-center lg:justify-end mt-3 sm:mt-4 lg:mt-2">
+              <button 
+                onClick={onProceed} 
+                className="bg-[#8B2323] text-white px-8 sm:px-10 md:px-12 py-3 sm:py-3.5 rounded-lg font-semibold text-base sm:text-lg md:text-xl cursor-pointer w-full sm:w-auto hover:bg-[#7A1F1F] transition-colors shadow-md"
+              >
+                Proceed
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Disclaimer */}
       <div className="flex items-center gap-2 sm:mt-6 text-xs sm:text-sm text-gray-600">
