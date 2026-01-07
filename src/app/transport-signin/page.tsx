@@ -1,12 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
-import { FaApple, FaGoogle, FaFacebookF, FaLock, FaFileAlt } from "react-icons/fa";
+import { FaApple, FaGoogle, FaFacebookF, FaLock, FaFileAlt, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useLoginMutation } from "@/feature/auth/authApiSlice";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "@/feature/authentication/authSlice";
@@ -19,6 +19,7 @@ const TransportSignInSchema = z.object({
 type TransportSignInForm = z.infer<typeof TransportSignInSchema>;
 
 export default function TransportSignInPage() {
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const dispatch = useDispatch();
   const { register, handleSubmit, formState: { errors } } = useForm<TransportSignInForm>({ 
@@ -208,14 +209,27 @@ export default function TransportSignInPage() {
               <FaLock className="text-gray-600 w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
               <label className="font-semibold text-black text-xs sm:text-sm" htmlFor="password">Password</label>
             </div>
-            <input
-              id="password"
-              type="password"
-              placeholder="Password"
-              className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] focus:outline-none text-sm sm:text-base"
-              autoComplete="current-password"
-              {...register("password")}
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 pr-10 sm:pr-12 bg-white text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] focus:outline-none text-sm sm:text-base"
+                autoComplete="current-password"
+                {...register("password")}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                {showPassword ? (
+                  <FaEyeSlash className="w-5 h-5" />
+                ) : (
+                  <FaEye className="w-5 h-5" />
+                )}
+              </button>
+            </div>
             {errors.password && <p className="text-red-600 text-xs mt-1">{errors.password.message}</p>}
           </div>
           {(error || authError) && (

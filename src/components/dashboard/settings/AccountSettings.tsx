@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { FaTimes } from "react-icons/fa";
+import { FaTimes, FaEye, FaEyeSlash } from "react-icons/fa";
 
 type User = {
   first_name?: string;
@@ -23,6 +23,9 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChangePassword = async () => {
     setError("");
@@ -54,6 +57,9 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
       setShowChangePassword(false);
       alert("Password changed successfully!");
     } catch (err: any) {
@@ -83,8 +89,8 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
               <span className="text-gray-600 font-medium text-sm sm:text-base">Phone Number</span>
             </div>
             <span className="text-gray-500 text-xs sm:text-sm break-words sm:text-right">{user?.phone || "Not provided"}</span>
-          </div>
-
+        </div>
+        
           {/* Home Address */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 sm:py-4 border-b border-gray-300 hover:bg-[#F5F0F0] transition-colors cursor-pointer gap-2 sm:gap-0">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -102,7 +108,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
             <div className="flex items-center gap-2 sm:gap-3">
               <Image src="/Password-icon.png" alt="Password" width={20} height={20} className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
               <span className="text-gray-600 font-medium text-sm sm:text-base">Change Password</span>
-            </div>
+        </div>
             <span className="text-gray-500 text-xs sm:text-sm sm:text-right">********</span>
           </div>
         </div>
@@ -121,6 +127,9 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
                   setCurrentPassword("");
                   setNewPassword("");
                   setConfirmPassword("");
+                  setShowCurrentPassword(false);
+                  setShowNewPassword(false);
+                  setShowConfirmPassword(false);
                 }}
                 className="text-gray-500 hover:text-gray-700 transition-colors"
               >
@@ -139,39 +148,78 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Current Password
                 </label>
-                <input
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B2323] focus:border-transparent"
-                  placeholder="Enter current password"
-                />
+                <div className="relative">
+                  <input
+                    type={showCurrentPassword ? "text" : "password"}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B2323] focus:border-transparent"
+                    placeholder="Enter current password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    {showCurrentPassword ? (
+                      <FaEyeSlash className="w-5 h-5" />
+                    ) : (
+                      <FaEye className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   New Password
                 </label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B2323] focus:border-transparent"
-                  placeholder="Enter new password"
-                />
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B2323] focus:border-transparent"
+                    placeholder="Enter new password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    {showNewPassword ? (
+                      <FaEyeSlash className="w-5 h-5" />
+                    ) : (
+                      <FaEye className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Confirm New Password
                 </label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B2323] focus:border-transparent"
-                  placeholder="Confirm new password"
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B2323] focus:border-transparent"
+                    placeholder="Confirm new password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    {showConfirmPassword ? (
+                      <FaEyeSlash className="w-5 h-5" />
+                    ) : (
+                      <FaEye className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -183,6 +231,9 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
                   setCurrentPassword("");
                   setNewPassword("");
                   setConfirmPassword("");
+                  setShowCurrentPassword(false);
+                  setShowNewPassword(false);
+                  setShowConfirmPassword(false);
                 }}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
               >
@@ -195,9 +246,9 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
               >
                 {loading ? "Changing..." : "Change Password"}
               </button>
-            </div>
-          </div>
         </div>
+      </div>
+    </div>
       )}
     </>
   );

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { FaApple, FaGoogle, FaFacebookF, FaLock, FaFileAlt, FaHome, FaEnvelope, FaPhone } from "react-icons/fa";
+import { FaApple, FaGoogle, FaFacebookF, FaLock, FaFileAlt, FaHome, FaEnvelope, FaPhone, FaEye, FaEyeSlash } from "react-icons/fa";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -28,6 +28,8 @@ const TransportSignupSchema = z.object({
 type TransportSignupForm = z.infer<typeof TransportSignupSchema>;
 
 export default function TransportSignupPage() {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
   const dispatch = useDispatch();
   const [registerTransport, { isLoading }] = useRegisterTransportMutation();
@@ -299,14 +301,27 @@ export default function TransportSignupPage() {
                   <FaLock className="text-gray-600 w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                   <label className="font-semibold text-black text-xs sm:text-sm" htmlFor="password">Password</label>
                 </div>
-                <input
-                  id="password"
-                  type="password"
-                  {...register('password')}
-                  placeholder="Password"
-                  className="w-full px-3 sm:px-4 py-2 bg-white text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] focus:outline-none text-sm"
-                  autoComplete="new-password"
-                />
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    {...register('password')}
+                    placeholder="Password"
+                    className="w-full px-3 sm:px-4 py-2 pr-10 sm:pr-12 bg-white text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] focus:outline-none text-sm"
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    {showPassword ? (
+                      <FaEyeSlash className="w-5 h-5" />
+                    ) : (
+                      <FaEye className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
                 {errors.password && <p className="text-red-600 text-xs mt-1">{errors.password.message}</p>}
               </div>
               <div>
@@ -314,14 +329,27 @@ export default function TransportSignupPage() {
                   <FaLock className="text-gray-600 w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                   <label className="font-semibold text-black text-xs sm:text-sm" htmlFor="confirmPassword">Confirm Password</label>
                 </div>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  {...register('confirmPassword')}
-                  placeholder="Confirm Password"
-                  className="w-full px-3 sm:px-4 py-2 bg-white text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] focus:outline-none text-sm"
-                  autoComplete="new-password"
-                />
+                <div className="relative">
+                  <input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    {...register('confirmPassword')}
+                    placeholder="Confirm Password"
+                    className="w-full px-3 sm:px-4 py-2 pr-10 sm:pr-12 bg-white text-black rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] focus:outline-none text-sm"
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    {showConfirmPassword ? (
+                      <FaEyeSlash className="w-5 h-5" />
+                    ) : (
+                      <FaEye className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
                 {errors.confirmPassword && <p className="text-red-600 text-xs mt-1">{errors.confirmPassword.message}</p>}
               </div>
             </div>
