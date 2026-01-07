@@ -78,8 +78,8 @@ export const scheduleApiSlice = apiSlice.injectEndpoints({
       providesTags: ['Schedule'],
     }),
     getPaginatedSchedulesByStatus: builder.query({
-      query: ({ companyId, status, page = 0, size = 20 }) => ({
-        url: SCHEDULES.GET_PAGINATED_SCHEDULES_BY_STATUS(companyId, status),
+      query: ({ status, companyId, page = 0, size = 20 }) => ({
+        url: SCHEDULES.GET_PAGINATED_SCHEDULES_BY_STATUS(status, companyId),
         method: "GET",
         params: { page, size },
       }),
@@ -104,6 +104,14 @@ export const scheduleApiSlice = apiSlice.injectEndpoints({
       transformResponse: (response: any) => response?.data || response,
       providesTags: ['Schedule'],
     }),
+    filterSchedules: builder.query({
+      query: (filters) => ({
+        url: SCHEDULES.FILTER_SCHEDULES(filters),
+        method: "GET",
+      }),
+      transformResponse: (response: any) => response?.data || response,
+      providesTags: ['Schedule'],
+    }),
   }),
 });
 
@@ -120,5 +128,6 @@ export const {
   useGetPaginatedSchedulesByStatusQuery,
   useSearchSchedulesQuery,
   useGetAllSchedulesPaginatedQuery,
+  useFilterSchedulesQuery,
 } = scheduleApiSlice;
 

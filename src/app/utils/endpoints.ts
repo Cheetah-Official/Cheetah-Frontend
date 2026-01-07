@@ -95,13 +95,13 @@ export const SCHEDULES = {
     return `/api/schedules/trip/${tripId}${query ? `?${query}` : ''}`;
   }, // GET /api/schedules/trip/{tripId}
   GET_SCHEDULES_BY_STATUS: (status: string) => `/api/schedules/status/${status}`, // GET /api/schedules/status/{status}
-  GET_PAGINATED_SCHEDULES_BY_STATUS: (companyId: number, status: string, page?: number, size?: number) => {
+  GET_PAGINATED_SCHEDULES_BY_STATUS: (status: string, companyId: number, page?: number, size?: number) => {
     const params = new URLSearchParams();
     if (page !== undefined) params.append('page', page.toString());
     if (size !== undefined) params.append('size', size.toString());
     const query = params.toString();
-    return `/api/schedules/status/${companyId}/${status}/paginate${query ? `?${query}` : ''}`;
-  }, // GET /api/schedules/status/{companyId}/{status}/paginate
+    return `/api/schedules/status/${status}/${companyId}/paginate${query ? `?${query}` : ''}`;
+  }, // GET /api/schedules/status/{status}/{companyId}/paginate
   SEARCH_SCHEDULES: (startDate: string, endDate: string) => `/api/schedules/search?startDate=${startDate}&endDate=${endDate}`, // GET /api/schedules/search
   GET_PAGINATED_SCHEDULES: (page?: number, size?: number) => {
     const params = new URLSearchParams();
@@ -110,6 +110,34 @@ export const SCHEDULES = {
     const query = params.toString();
     return `/api/schedules/paginate${query ? `?${query}` : ''}`;
   }, // GET /api/schedules/paginate
+  FILTER_SCHEDULES: (filters: {
+    origin?: string;
+    destination?: string;
+    startDate?: string;
+    endDate?: string;
+    status?: string;
+    tripId?: number;
+    vehicleId?: number;
+    companyId?: number;
+    minAvailableSeats?: number;
+    page?: number;
+    size?: number;
+  }) => {
+    const params = new URLSearchParams();
+    if (filters.origin) params.append('origin', filters.origin);
+    if (filters.destination) params.append('destination', filters.destination);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.status) params.append('status', filters.status);
+    if (filters.tripId !== undefined) params.append('tripId', filters.tripId.toString());
+    if (filters.vehicleId !== undefined) params.append('vehicleId', filters.vehicleId.toString());
+    if (filters.companyId !== undefined) params.append('companyId', filters.companyId.toString());
+    if (filters.minAvailableSeats !== undefined) params.append('minAvailableSeats', filters.minAvailableSeats.toString());
+    if (filters.page !== undefined) params.append('page', filters.page.toString());
+    if (filters.size !== undefined) params.append('size', filters.size.toString());
+    const query = params.toString();
+    return `/api/schedules/filter${query ? `?${query}` : ''}`;
+  }, // GET /api/schedules/filter
 };
 
 // Vehicle endpoints

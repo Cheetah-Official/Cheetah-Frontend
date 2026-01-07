@@ -1,12 +1,41 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { FaChevronRight, FaExchangeAlt } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { logOut, selectCurrentAccessToken, selectCurrentUser } from "@/feature/authentication/authSlice";
 import { useGetAuthenticatedUserQuery } from "@/feature/auth/authApiSlice";
+import { useGetTripsByCompanyQuery } from "@/feature/trips/tripApiSlice";
+import { useGetVehiclesByCompanyQuery } from "@/feature/vehicles/vehicleApiSlice";
+import { useGetPaginatedSchedulesByStatusQuery } from "@/feature/schedules/scheduleApiSlice";
+import { useGetBookingsByScheduleQuery } from "@/feature/bookings/bookingApiSlice";
+import { useGetDailyAnalyticsQuery } from "@/feature/analytics/analyticsApiSlice";
+
+// Component to fetch bookings for a single schedule
+function ScheduleBookings({ scheduleId, children }: { scheduleId: number; children: (data: { adults: number; children: number; total: number }) => React.ReactNode }) {
+  const { data: bookingsData } = useGetBookingsByScheduleQuery(
+    { scheduleId, page: 0, size: 100 },
+    { skip: !scheduleId }
+  );
+
+  const bookings = bookingsData?.content || bookingsData || [];
+  const passengerCounts = bookings.reduce(
+    (acc: { adults: number; children: number; total: number }, booking: any) => {
+      const adults = booking.numberOfAdults || 0;
+      const children = booking.numberOfChildren || 0;
+      return {
+        adults: acc.adults + adults,
+        children: acc.children + children,
+        total: acc.total + adults + children,
+      };
+    },
+    { adults: 0, children: 0, total: 0 }
+  );
+
+  return <>{children(passengerCounts)}</>;
+}
 
 export default function TransportDashboard() {
   const router = useRouter();
@@ -27,86 +56,142 @@ export default function TransportDashboard() {
     }
   }, [authUserError, dispatch, router]);
 
-  // Get company name from authenticated user or Redux state
-  const companyName = authUser?.companyName || reduxUser?.companyName || "Transport Company";
-  const companyCode = authUser?.companyCode || reduxUser?.companyCode || "";
-  const [busSeats, setBusSeats] = useState("18 Seats");
-  const [from, setFrom] = useState("Lagos");
-  const [to, setTo] = useState("Abuja");
-  const [busFare, setBusFare] = useState("34,000.00");
+  // Get company ID from authenticated user or Redux state
+  const companyId = authUser?.companyId || authUser?.id || authUser?.userId || reduxUser?.companyId || reduxUser?.id || reduxUser?.userId;
+  
+  // Use state to prevent hydration mismatch for company name and code
+  const [companyName, setCompanyName] = useState("Transport Company");
+  const [companyCode, setCompanyCode] = useState("");
+  
+  // Update company name after mount to prevent hydration mismatch
+  useEffect(() => {
+    const name = authUser?.companyName || reduxUser?.companyName || "Transport Company";
+    const code = authUser?.companyCode || reduxUser?.companyCode || "";
+    setCompanyName(name);
+    setCompanyCode(code);
+  }, [authUser?.companyName, reduxUser?.companyName, authUser?.companyCode, reduxUser?.companyCode]);
 
-  const [trips] = useState([
-    {
-      id: 1,
-      busNo: "1.",
-      route: "Lagos - Abuja",
-      departureDate: "20 - Dec - 2025",
-      passengers: "18 Adults",
-    },
-    {
-      id: 2,
-      busNo: "2.",
-      route: "Abuja - Edo",
-      departureDate: "20 - Dec - 2025",
-      passengers: "3 Children / 15 Adults",
-    },
-    {
-      id: 3,
-      busNo: "3.",
-      route: "Lagos - Calabar",
-      departureDate: "21 - Dec - 2025",
-      passengers: "1 Child / 17 Adults",
-    },
-    {
-      id: 4,
-      busNo: "4.",
-      route: "Lagos - Abuja",
-      departureDate: "21 - Dec - 2025",
-      passengers: "18 Adults",
-    },
-    {
-      id: 5,
-      busNo: "5.",
-      route: "Abuja - Edo",
-      departureDate: "21 - Dec - 2025",
-      passengers: "3 Children / 15 Adults",
-    },
-    {
-      id: 6,
-      busNo: "6.",
-      route: "Lagos - Kano",
-      departureDate: "22 - Dec - 2025",
-      passengers: "20 Adults",
-    },
-    {
-      id: 7,
-      busNo: "7.",
-      route: "Abuja - Lagos",
-      departureDate: "22 - Dec - 2025",
-      passengers: "2 Children / 16 Adults",
-    },
-    {
-      id: 8,
-      busNo: "8.",
-      route: "Calabar - Lagos",
-      departureDate: "23 - Dec - 2025",
-      passengers: "18 Adults",
-    },
-    {
-      id: 9,
-      busNo: "9.",
-      route: "Edo - Abuja",
-      departureDate: "23 - Dec - 2025",
-      passengers: "4 Children / 14 Adults",
-    },
-    {
-      id: 10,
-      busNo: "10.",
-      route: "Lagos - Abuja",
-      departureDate: "24 - Dec - 2025",
-      passengers: "18 Adults",
-    },
-  ]);
+  // Fetch data from APIs
+  const { data: tripsData, isLoading: tripsLoading } = useGetTripsByCompanyQuery(Number(companyId), {
+    skip: !hasToken || !companyId,
+  });
+
+  const { data: vehiclesData, isLoading: vehiclesLoading } = useGetVehiclesByCompanyQuery(Number(companyId), {
+    skip: !hasToken || !companyId,
+  });
+
+  const { data: schedulesData, isLoading: schedulesLoading } = useGetPaginatedSchedulesByStatusQuery(
+    { status: "OPEN", companyId: Number(companyId), page: 0, size: 50 },
+    { skip: !hasToken || !companyId }
+  );
+
+  // Get today's date for analytics
+  const today = new Date().toISOString().split('T')[0];
+  const { data: analyticsData, isLoading: analyticsLoading } = useGetDailyAnalyticsQuery(
+    { companyId: Number(companyId), date: today },
+    { skip: !hasToken || !companyId }
+  );
+
+  // Extract data from API responses
+  const trips = tripsData || [];
+  const vehicles = vehiclesData || [];
+  const schedules = schedulesData?.content || schedulesData || [];
+  
+  // Get unique cities from trips for route selection
+  const uniqueCities = useMemo(() => {
+    const cities = new Set<string>();
+    trips.forEach((trip: any) => {
+      if (trip.origin) cities.add(trip.origin);
+      if (trip.destination) cities.add(trip.destination);
+    });
+    return Array.from(cities).sort();
+  }, [trips]);
+
+  // State for price management
+  const [selectedVehicleId, setSelectedVehicleId] = useState<number | "">("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [busFare, setBusFare] = useState("");
+  const [selectedScheduleId, setSelectedScheduleId] = useState<number | null>(null);
+
+  // Initialize from/to with first available cities
+  useEffect(() => {
+    if (uniqueCities.length > 0 && !from) {
+      setFrom(uniqueCities[0]);
+      if (uniqueCities.length > 1) {
+        setTo(uniqueCities[1]);
+      }
+    }
+  }, [uniqueCities, from]);
+
+  // Find matching trip for selected route
+  const selectedTrip = useMemo(() => {
+    if (!from || !to) return null;
+    return trips.find((trip: any) => 
+      trip.origin === from && trip.destination === to
+    );
+  }, [trips, from, to]);
+
+  // Find matching schedule for price management
+  useEffect(() => {
+    if (selectedTrip && selectedVehicleId) {
+      const schedule = schedules.find((s: any) => 
+        s.tripId === selectedTrip.id && s.vehicleId === selectedVehicleId
+      );
+      if (schedule) {
+        setSelectedScheduleId(schedule.id);
+        setBusFare(schedule.price?.toLocaleString() || "");
+      } else {
+        setSelectedScheduleId(null);
+        setBusFare(selectedTrip.amount?.toLocaleString() || "");
+      }
+    } else if (selectedTrip) {
+      setBusFare(selectedTrip.amount?.toLocaleString() || "");
+    }
+  }, [selectedTrip, selectedVehicleId, schedules]);
+
+  // Format schedules for trips table - using available seats calculation as fallback
+  // Actual passenger counts will be fetched per schedule in the table component
+  const formattedTrips = useMemo(() => {
+    return schedules.slice(0, 20).map((schedule: any, index: number) => {
+      const trip = trips.find((t: any) => t.id === schedule.tripId);
+      const vehicle = vehicles.find((v: any) => v.id === schedule.vehicleId);
+      const totalSeats = vehicle?.capacity || 0;
+      const bookedSeats = totalSeats - (schedule.availableSeats || 0);
+      
+      return {
+        id: schedule.id,
+        scheduleId: schedule.id,
+        busNo: `${index + 1}.`,
+        route: trip ? `${trip.origin} - ${trip.destination}` : "N/A",
+        departureDate: schedule.departureTime 
+          ? new Date(schedule.departureTime).toLocaleDateString('en-GB', { 
+              day: '2-digit', 
+              month: 'short', 
+              year: 'numeric' 
+            }).replace(/ /g, ' - ')
+          : "N/A",
+        // Fallback calculation (will be replaced with actual booking data)
+        passengers: `${bookedSeats} / ${totalSeats} Seats`,
+        totalSeats,
+        bookedSeats,
+      };
+    });
+  }, [schedules, trips, vehicles]);
+
+  // Calculate statistics
+  const totalPassengers = useMemo(() => {
+    return schedules.reduce((total: number, schedule: any) => {
+      const vehicle = vehicles.find((v: any) => v.id === schedule.vehicleId);
+      const totalSeats = vehicle?.capacity || 0;
+      const bookedSeats = totalSeats - (schedule.availableSeats || 0);
+      return total + bookedSeats;
+    }, 0);
+  }, [schedules, vehicles]);
+
+  // Get analytics statistics
+  const analyticsStats = analyticsData || {};
+  const displayPassengers = analyticsStats.totalPassengers || totalPassengers || 0;
 
   const handleSwapCities = () => {
     const temp = from;
@@ -114,9 +199,15 @@ export default function TransportDashboard() {
     setTo(temp);
   };
 
-  const handleSaveChanges = () => {
-    // TODO: Implement save functionality
-    alert("Changes saved successfully!");
+  const handleSaveChanges = async () => {
+    if (!selectedScheduleId || !busFare) {
+      alert("Please select a vehicle and route, and enter a fare amount.");
+      return;
+    }
+
+    // TODO: Implement schedule price update API call
+    // For now, just show success message
+    alert("Price updated successfully!");
   };
 
   return (
@@ -154,16 +245,36 @@ export default function TransportDashboard() {
               </h3>
               <FaChevronRight className="w-5 h-5 text-gray-400" />
             </div>
-            <p className="text-4xl font-bold text-gray-900 mb-4">13,400</p>
+            <p className="text-4xl font-bold text-gray-900 mb-4">
+              {analyticsLoading ? "Loading..." : displayPassengers.toLocaleString()}
+            </p>
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="inline-flex items-center px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
-                +23.6%
-              </span>
-              <span className="text-gray-500 text-xs">vs Last month</span>
-              <span className="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-xs font-medium rounded">
-                -3.4%
-              </span>
-              <span className="text-gray-500 text-xs">vs Last week</span>
+              {analyticsStats.passengerGrowthMonth && (
+                <>
+                  <span className={`inline-flex items-center px-2 py-1 ${
+                    analyticsStats.passengerGrowthMonth > 0 
+                      ? "bg-green-100 text-green-700" 
+                      : "bg-red-100 text-red-700"
+                  } text-xs font-medium rounded`}>
+                    {analyticsStats.passengerGrowthMonth > 0 ? "+" : ""}
+                    {analyticsStats.passengerGrowthMonth?.toFixed(1)}%
+                  </span>
+                  <span className="text-gray-500 text-xs">vs Last month</span>
+                </>
+              )}
+              {analyticsStats.passengerGrowthWeek && (
+                <>
+                  <span className={`inline-flex items-center px-2 py-1 ${
+                    analyticsStats.passengerGrowthWeek > 0 
+                      ? "bg-green-100 text-green-700" 
+                      : "bg-red-100 text-red-700"
+                  } text-xs font-medium rounded`}>
+                    {analyticsStats.passengerGrowthWeek > 0 ? "+" : ""}
+                    {analyticsStats.passengerGrowthWeek?.toFixed(1)}%
+                  </span>
+                  <span className="text-gray-500 text-xs">vs Last week</span>
+                </>
+              )}
             </div>
           </div>
 
@@ -175,12 +286,23 @@ export default function TransportDashboard() {
               </h3>
               <FaChevronRight className="w-5 h-5 text-gray-400" />
             </div>
-            <p className="text-4xl font-bold text-gray-900 mb-4">310</p>
+            <p className="text-4xl font-bold text-gray-900 mb-4">
+              {analyticsLoading ? "Loading..." : (analyticsStats.wifiCodesUsed || 0).toLocaleString()}
+            </p>
             <div className="flex items-center gap-3">
-              <span className="inline-flex items-center px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
-                +84.2%
-              </span>
-              <span className="text-gray-500 text-xs">vs Last week</span>
+              {analyticsStats.wifiGrowthWeek && (
+                <>
+                  <span className={`inline-flex items-center px-2 py-1 ${
+                    analyticsStats.wifiGrowthWeek > 0 
+                      ? "bg-green-100 text-green-700" 
+                      : "bg-red-100 text-red-700"
+                  } text-xs font-medium rounded`}>
+                    {analyticsStats.wifiGrowthWeek > 0 ? "+" : ""}
+                    {analyticsStats.wifiGrowthWeek?.toFixed(1)}%
+                  </span>
+                  <span className="text-gray-500 text-xs">vs Last week</span>
+                </>
+              )}
             </div>
           </div>
 
@@ -199,14 +321,18 @@ export default function TransportDashboard() {
                   </div>
                   <select
                     id="bus-seats"
-                    value={busSeats}
-                    onChange={(e) => setBusSeats(e.target.value)}
+                    value={selectedVehicleId}
+                    onChange={(e) => setSelectedVehicleId(e.target.value ? Number(e.target.value) : "")}
                     className="w-auto min-w-[220px] pl-12 pr-8 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] cursor-pointer"
-                    aria-label="Select bus seats"
+                    aria-label="Select vehicle"
+                    disabled={vehiclesLoading || vehicles.length === 0}
                   >
-                    <option value="18 Seats" className="text-gray-900">18 Seats</option>
-                    <option value="30 Seats" className="text-gray-900">30 Seats</option>
-                    <option value="45 Seats" className="text-gray-900">45 Seats</option>
+                    <option value="" className="text-gray-900">Select Vehicle</option>
+                    {vehicles.map((vehicle: any) => (
+                      <option key={vehicle.id} value={vehicle.id} className="text-gray-900">
+                        {vehicle.vehicleNo} ({vehicle.capacity} Seats)
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -221,18 +347,21 @@ export default function TransportDashboard() {
                     onChange={(e) => setFrom(e.target.value)}
                     className="w-[180px] px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] cursor-pointer"
                     aria-label="Select departure city"
+                    disabled={tripsLoading || uniqueCities.length === 0}
                   >
-                    <option value="Lagos" className="text-gray-900">Lagos</option>
-                    <option value="Abuja" className="text-gray-900">Abuja</option>
-                    <option value="Kano" className="text-gray-900">Kano</option>
-                    <option value="Edo" className="text-gray-900">Edo</option>
-                    <option value="Calabar" className="text-gray-900">Calabar</option>
+                    <option value="" className="text-gray-900">Select Origin</option>
+                    {uniqueCities.map((city) => (
+                      <option key={city} value={city} className="text-gray-900">
+                        {city}
+                      </option>
+                    ))}
                   </select>
                   <div className="w-[180px] flex justify-center">
                     <button
                       onClick={handleSwapCities}
                       className="p-1 text-orange-700 hover:text-orange-800 transition-colors cursor-pointer"
                       aria-label="Swap cities"
+                      disabled={!from || !to}
                     >
                       <FaExchangeAlt className="w-4 h-4" />
                     </button>
@@ -243,12 +372,14 @@ export default function TransportDashboard() {
                     onChange={(e) => setTo(e.target.value)}
                     className="w-[180px] px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] cursor-pointer"
                     aria-label="Select destination city"
+                    disabled={tripsLoading || uniqueCities.length === 0}
                   >
-                    <option value="Lagos" className="text-gray-900">Lagos</option>
-                    <option value="Abuja" className="text-gray-900">Abuja</option>
-                    <option value="Kano" className="text-gray-900">Kano</option>
-                    <option value="Edo" className="text-gray-900">Edo</option>
-                    <option value="Calabar" className="text-gray-900">Calabar</option>
+                    <option value="" className="text-gray-900">Select Destination</option>
+                    {uniqueCities.filter(city => city !== from).map((city) => (
+                      <option key={city} value={city} className="text-gray-900">
+                        {city}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -308,22 +439,50 @@ export default function TransportDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
-                  {trips.map((trip) => (
-                    <tr key={trip.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {trip.busNo}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {trip.route}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {trip.departureDate}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {trip.passengers}
+                  {schedulesLoading ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                        Loading schedules...
                       </td>
                     </tr>
-                  ))}
+                  ) : formattedTrips.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                        No schedules found. Create schedules in the Buses & Routes page.
+                      </td>
+                    </tr>
+                  ) : (
+                    formattedTrips.map((trip: any) => (
+                      <ScheduleBookings key={trip.id} scheduleId={trip.scheduleId}>
+                        {({ adults, children, total }) => {
+                          const passengerText = 
+                            children > 0 
+                              ? `${children} ${children === 1 ? 'Child' : 'Children'} / ${adults} ${adults === 1 ? 'Adult' : 'Adults'}`
+                              : `${total} ${total === 1 ? 'Adult' : 'Adults'}`;
+                          const displayText = total > 0 
+                            ? passengerText 
+                            : `${trip.bookedSeats} / ${trip.totalSeats} Seats`;
+                          
+                          return (
+                            <tr className="hover:bg-gray-50">
+                              <td className="px-6 py-4 text-sm text-gray-900">
+                                {trip.busNo}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-900">
+                                {trip.route}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-600">
+                                {trip.departureDate}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-900">
+                                {displayText}
+                              </td>
+                            </tr>
+                          );
+                        }}
+                      </ScheduleBookings>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

@@ -6,6 +6,8 @@ type Company = {
   name: string
   logo: string
   price: number
+  // Optional primary schedule information (used in compare/seat flows)
+  primarySchedule?: any
 }
 
 type TransportsTabProps = {

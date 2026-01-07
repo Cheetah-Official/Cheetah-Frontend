@@ -3,48 +3,131 @@
 import Image from "next/image";
 import { FaChevronLeft, FaCheckCircle, FaWifi, FaShieldAlt } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Sidebar from "@/components/dashboard/sidebar/Sidebar";
-
-// Mock booking history data - replace with API call
-const bookingHistory = [
-  {
-    id: 1,
-    company: "Chisco",
-    logo: "/CHISCO.png",
-    route: "Lagos - Abuja",
-    price: 64000,
-    timeAgo: "30 Mins ago",
-    ticketId: "#CH-992831",
-    departure: "08:30 AM, July 28th, 2025",
-    daysRemaining: 4,
-    passengers: 2,
-    seats: [6, 7],
-    status: "Confirmed",
-    hasWifi: true,
-    hasInsurance: true,
-  },
-  {
-    id: 2,
-    company: "Peace Mass",
-    logo: "/PeaceMass-Logo.jpg",
-    route: "Awka - Lagos",
-    price: 32000,
-    timeAgo: "14 Days ago",
-    ticketId: "#PM-882145",
-    departure: "10:00 AM, July 14th, 2025",
-    daysRemaining: 0,
-    passengers: 1,
-    seats: [12],
-    status: "Completed",
-    hasWifi: true,
-    hasInsurance: true,
-  },
-];
+import { useDispatch, useSelector } from "react-redux";
+import {
+  logOut,
+  selectCurrentAccessToken,
+  selectCurrentUser,
+} from "@/feature/authentication/authSlice";
+import { useGetAuthenticatedUserQuery } from "@/feature/auth/authApiSlice";
+import { useGetBookingsByUserQuery } from "@/feature/bookings/bookingApiSlice";
 
 export default function BookingHistoryPage() {
   const router = useRouter();
-  const [selectedBooking, setSelectedBooking] = useState(bookingHistory[0]);
+  const dispatch = useDispatch();
+
+  // Auth: get user and token
+  const accessToken = useSelector(selectCurrentAccessToken);
+  const reduxUser = useSelector(selectCurrentUser);
+  const localStorageToken =
+    typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+  const hasToken = !!(accessToken || localStorageToken);
+
+  const {
+    data: authUser,
+    isFetching: authUserFetching,
+    error: authUserError,
+  } = useGetAuthenticatedUserQuery(undefined, {
+    skip: !hasToken,
+  });
+
+  useEffect(() => {
+    if (authUserError && (authUserError as any)?.status === 401) {
+      dispatch(logOut());
+      router.replace("/signin");
+    }
+  }, [authUserError, dispatch, router]);
+
+  const user = authUser || reduxUser;
+  const userId =
+    user?.id || user?.userId || user?.user_id || user?.customerId || user?.customer_id;
+
+  // Fetch bookings for this user
+  const {
+    data: bookingsResponse,
+    isLoading: loadingBookings,
+    error: bookingsError,
+  } = useGetBookingsByUserQuery(
+    { userId: Number(userId), page: 0, size: 20 },
+    { skip: !hasToken || !userId },
+  );
+
+  const bookingHistory = useMemo(() => {
+    const raw =
+      bookingsResponse?.content ||
+      bookingsResponse?.data?.content ||
+      bookingsResponse?.data ||
+      bookingsResponse ||
+      [];
+
+    return (raw as any[]).map((b: any) => {
+      const createdAt = b.createdAt || b.created_at;
+      const departureTime = b.departureTime || b.departure_time;
+
+      // timeAgo
+      let timeAgo = "";
+      if (createdAt) {
+        const diffMs = Date.now() - new Date(createdAt).getTime();
+        const minutes = Math.floor(diffMs / (1000 * 60));
+        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+        const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        if (days > 0) timeAgo = `${days} ${days === 1 ? "day" : "days"} ago`;
+        else if (hours > 0)
+          timeAgo = `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+        else timeAgo = `${minutes || 0} min${minutes === 1 ? "" : "s"} ago`;
+      }
+
+      // daysRemaining until departure
+      let daysRemaining = 0;
+      if (departureTime) {
+        const diffMs = new Date(departureTime).getTime() - Date.now();
+        daysRemaining = Math.max(
+          0,
+          Math.ceil(diffMs / (1000 * 60 * 60 * 24)),
+        );
+      }
+
+      // Format departure text
+      const departureText = departureTime
+        ? new Date(departureTime).toLocaleString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })
+        : "";
+
+      return {
+        id: b.id,
+        company: b.companyName || "Cheetah Transport",
+        logo: "/Logo.png",
+        route: `${b.origin || ""} - ${b.destination || ""}`,
+        price: b.price || 0,
+        timeAgo,
+        ticketId: b.bookingRef || b.booking_reference || `#BKG-${b.id}`,
+        departure: departureText,
+        daysRemaining,
+        passengers: 1,
+        seats: b.seatNumber ? [b.seatNumber] : [],
+        status: (b.status || "").toUpperCase(),
+        hasWifi: true,
+        hasInsurance: true,
+      };
+    });
+  }, [bookingsResponse]);
+
+  const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
+
+  // When bookings load, set default selection
+  useEffect(() => {
+    if (!selectedBooking && bookingHistory.length > 0) {
+      setSelectedBooking(bookingHistory[0]);
+    }
+  }, [bookingHistory, selectedBooking]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-NG", {
@@ -66,7 +149,10 @@ export default function BookingHistoryPage() {
           else router.push("/dashboard?tab=transports");
         }}
         onMobileMenuClose={() => {}}
-        onLogout={() => router.push("/signin")}
+        onLogout={() => {
+          dispatch(logOut());
+          router.push("/signin");
+        }}
       />
 
       {/* Main Content */}
@@ -88,14 +174,29 @@ export default function BookingHistoryPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 min-h-0 lg:h-[calc(100vh-180px)]">
           {/* Left Column - History */}
           <div className="bg-[#F2F2F2] rounded-xl p-4 sm:p-6 shadow-sm overflow-hidden flex flex-col h-full">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6 flex-shrink-0">History</h2>
-            <div className="space-y-4 overflow-y-auto flex-1 pr-2 custom-scrollbar min-h-0">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6 flex-shrink-0">
+              History
+            </h2>
+            {loadingBookings ? (
+              <div className="flex-1 flex items-center justify-center text-gray-600 text-sm">
+                Loading bookings...
+              </div>
+            ) : bookingsError ? (
+              <div className="flex-1 flex items-center justify-center text-red-600 text-sm">
+                Failed to load bookings. Please try again.
+              </div>
+            ) : bookingHistory.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center text-gray-600 text-sm">
+                You have no bookings yet.
+              </div>
+            ) : (
+              <div className="space-y-4 overflow-y-auto flex-1 pr-2 custom-scrollbar min-h-0">
               {bookingHistory.map((booking) => (
                 <div
                   key={booking.id}
                   onClick={() => setSelectedBooking(booking)}
                   className={`p-3 sm:p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                    selectedBooking.id === booking.id
+                    selectedBooking?.id === booking.id
                       ? " bg-white hover:bg-[#F5F0F0]"
                       : "  bg-gray-50 hover:bg-[#F5F0F0]"
                   }`}
@@ -125,11 +226,18 @@ export default function BookingHistoryPage() {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Right Column - Ticket Details */}
           <div className="bg-[#F2F2F2] rounded-xl p-4 sm:p-6 shadow-sm">
+            {!selectedBooking ? (
+              <div className="h-full flex items-center justify-center text-sm text-gray-600">
+                Select a booking from the left to see details.
+              </div>
+            ) : (
+            <div className="flex flex-col h-full">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h2 className="text-lg sm:text-xl font-bold text-gray-800">Ticket Details</h2>
               <span className="text-xs sm:text-sm font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded">
@@ -210,7 +318,7 @@ export default function BookingHistoryPage() {
                 />
                 <span className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">Seat Number</span>
                 <div className="flex gap-2 flex-wrap">
-                  {selectedBooking.seats.map((seat, idx) => (
+                  {selectedBooking.seats.map((seat: any, idx: number) => (
                     <div
                       key={idx}
                       className="w-8 h-8 sm:w-10 sm:h-10 bg-[#757575] rounded-lg flex items-center justify-center flex-shrink-0"
@@ -228,13 +336,17 @@ export default function BookingHistoryPage() {
                 {selectedBooking.hasWifi && (
                   <div className="flex items-center gap-2">
                     <FaWifi className="text-green-500 w-4 h-4 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm text-gray-700 whitespace-nowrap">Free WiFi</span>
+                    <span className="text-xs sm:text-sm text-gray-700 whitespace-nowrap">
+                      Free WiFi
+                    </span>
                   </div>
                 )}
                 {selectedBooking.hasInsurance && (
                   <div className="flex items-center gap-2">
                     <FaShieldAlt className="text-green-500 w-4 h-4 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm text-gray-700 whitespace-nowrap">Free Insurance</span>
+                    <span className="text-xs sm:text-sm text-gray-700 whitespace-nowrap">
+                      Free Insurance
+                    </span>
                   </div>
                 )}
               </div>
@@ -248,6 +360,8 @@ export default function BookingHistoryPage() {
                 Download Ticket
               </button>
             </div>
+            </div>
+            )}
           </div>
         </div>
       </main>

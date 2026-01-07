@@ -5,6 +5,7 @@ type Company = {
   name: string
   logo: string
   price: number
+  primarySchedule?: any
 }
 
 type CompareBookingViewProps = {
