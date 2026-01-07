@@ -93,7 +93,7 @@ export default function StakeholderBenefitsSection() {
                   <Check className="w-4 h-4 text-gray-600" />
                 </div>
                 <p className="text-gray-700">
-                  Real-time schedule and seat integration via API or CSV upload.
+                  Register your Transportation company.
                 </p>
               </div>
               <div className="flex items-start space-x-3">
@@ -113,7 +113,7 @@ export default function StakeholderBenefitsSection() {
           {/* Content */}
           <div>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-              For Insurance & Wi-Fi Provided
+              For Passengers
             </h2>
             <div className="space-y-4">
               <div className="flex items-start space-x-3">
@@ -121,7 +121,7 @@ export default function StakeholderBenefitsSection() {
                   <Check className="w-4 h-4 text-gray-600" />
                 </div>
                 <p className="text-gray-700">
-                  Seamless integration into booking flows.
+                  Free Accident Insurance Provided
                 </p>
               </div>
               <div className="flex items-start space-x-3">
@@ -129,7 +129,7 @@ export default function StakeholderBenefitsSection() {
                   <Check className="w-4 h-4 text-gray-600" />
                 </div>
                 <p className="text-gray-700">
-                  Gain access to thousands of daily travelers.
+                  Free WiFi also Provided
                 </p>
               </div>
             </div>

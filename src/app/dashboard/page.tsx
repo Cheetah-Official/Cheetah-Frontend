@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/useAuth"
 import { useDispatch, useSelector } from "react-redux"
 import { logOut, selectCurrentAccessToken, selectCurrentUser } from "@/feature/authentication/authSlice"
 import { useGetAuthenticatedUserQuery } from "@/feature/auth/authApiSlice"
+import { useGetNotificationsQuery } from "@/feature/notifications/notificationApiSlice"
 import {
   Sidebar,
   DashboardHeader,
@@ -149,6 +150,19 @@ function DashboardContent() {
   // });
   const userBookings: any[] = []; // TODO: Get from RTK Query
   const loadingBookings = false; // TODO: Get from RTK Query
+
+  // Fetch notifications from API
+  const { data: notificationsResponse, isLoading: loadingNotifications } = useGetNotificationsQuery(
+    { page: 0, size: 20 },
+    { skip: !hasToken }
+  );
+  
+  // Extract notifications array from response (handle different response formats)
+  const notifications = Array.isArray(notificationsResponse?.data) 
+    ? notificationsResponse.data 
+    : Array.isArray(notificationsResponse) 
+    ? notificationsResponse 
+    : [];
 
   // TODO: Provider statistics - Need to check if this endpoint exists in Swagger
   // If not, may need to create a new endpoint or use existing schedule/trip endpoints
@@ -357,32 +371,32 @@ function DashboardContent() {
         {/* Notifications Tab */}
         {activeTab === "activity" && (
           <div className="space-y-4 sm:space-y-6">
-            <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">Notifications</h2>
+            {/* Header with Notifications title and Booking History button */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">Notifications</h2>
+              <button
+                onClick={() => {
+                  router.push("/dashboard/booking-history");
+                }}
+                className="flex items-center gap-2 bg-[#8B2323] hover:bg-[#7A1F1F] text-white px-4 py-2.5 sm:px-5 sm:py-3 rounded-lg font-semibold transition-colors text-sm sm:text-base shadow-sm cursor-pointer"
+              >
+                <Image 
+                  src="/BookingHistory.png" 
+                  alt="Booking History" 
+                  width={20} 
+                  height={20} 
+                  className="w-4 h-4 sm:w-5 sm:h-5"
+                />
+                <span>Booking History</span>
+              </button>
+            </div>
             
-            {/* Check if user has bookings */}
-            {!activeBooking && (!userBookings || userBookings.length === 0) ? (
-              /* Empty State - No Bookings */
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:items-stretch">
-                {/* Top Left - Ticket Details Empty State */}
-                <div className="bg-[#F2F2F2] rounded-xl p-3 sm:p-4 shadow-sm flex flex-col items-center justify-center min-h-[200px]">
-                  <FaExclamationTriangle className="text-gray-400 w-12 h-12 sm:w-16 sm:h-16 mb-4" />
-                  <p className="text-sm sm:text-base text-gray-600 font-medium">No Ticket Details Yet</p>
-                </div>
-
-                {/* Bottom Left - Notification List Empty State */}
-                <div className="bg-[#F2F2F2] rounded-xl p-4 sm:p-6 shadow-sm flex flex-col items-center justify-center min-h-[200px]">
-                  <FaExclamationTriangle className="text-gray-400 w-12 h-12 sm:w-16 sm:h-16 mb-4" />
-                  <p className="text-sm sm:text-base text-gray-600 font-medium">No Notifications Yet</p>
-                </div>
-
-                {/* Right Column - Wi-Fi Code Empty State */}
-                <div className="bg-[#F2F2F2] rounded-xl p-4 sm:p-6 shadow-sm flex flex-col items-center justify-center min-h-[400px] lg:col-span-1 lg:row-span-2">
-                  <FaExclamationTriangle className="text-gray-400 w-12 h-12 sm:w-16 sm:h-16 mb-4" />
-                  <p className="text-sm sm:text-base text-gray-600 font-medium">No Notifications Yet</p>
-                </div>
+            {/* Always show notifications section */}
+            {loadingNotifications ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-gray-600">Loading notifications...</div>
               </div>
             ) : (
-              /* Content - User has bookings */
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:items-stretch">
               {/* Left Column - Stacked Cards */}
               <div className="flex flex-col gap-4 sm:gap-6 h-full">
@@ -484,56 +498,53 @@ function DashboardContent() {
                 <div className="bg-[#F2F2F2] rounded-xl p-4 sm:p-6 shadow-sm flex flex-col flex-1 min-h-0 lg:h-full">
                   <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">Notification</h3>
                   <div className="space-y-4 flex-1 overflow-y-auto">
-                  {/* Wi-Fi Code Notification */}
-                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                    <FaWifi className="text-[#8B2323] w-5 h-5 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold text-gray-800">Wi-Fi Code</span>
-                        <span className="text-xs text-gray-500">30 Mins ago</span>
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        Your free onboard Wi-Fi code is ready. Stay connected throughout your trip.
-                      </p>
+                  {notifications.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <FaExclamationTriangle className="text-gray-400 w-12 h-12 mb-4" />
+                      <p className="text-sm text-gray-600 font-medium">No Notifications Yet</p>
                     </div>
-                  </div>
-
-                  {/* Reminder Notification */}
-                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                    <FaExclamationTriangle className="text-[#8B2323] w-5 h-5 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold text-gray-800">Reminder</span>
-                        <span className="text-xs text-gray-500">2 Days ago</span>
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        Trip starts soon. Don't forget to prepare for your journey.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Additional notifications from bookings */}
-                  {!loadingBookings && userBookings && userBookings.slice(0, 3).map((bk: any, idx: number) => {
-                    const provider = bk.schedule_details?.provider_name || bk.provider_name || "Provider"
-                    const origin = bk.schedule_details?.origin || bk.origin || "-"
-                    const destination = bk.schedule_details?.destination || bk.destination || "-"
-                    const dep = bk.schedule_details?.departure_time || bk.departure_time
-                    const timeAgo = dep ? Math.floor((Date.now() - new Date(dep).getTime()) / (1000 * 60 * 60)) : idx + 1
-                    return (
-                      <div key={bk.booking_id || idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                        <FaCheckCircle className="text-green-500 w-5 h-5 mt-0.5 flex-shrink-0" />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-semibold text-gray-800">Booking Confirmed</span>
-                            <span className="text-xs text-gray-500">{timeAgo} {timeAgo === 1 ? 'Hour' : 'Hours'} ago</span>
+                  ) : (
+                    notifications.map((notification: any, idx: number) => {
+                      // Format time ago
+                      const createdAt = notification.created_at || notification.createdAt || notification.timestamp;
+                      const timeAgo = createdAt 
+                        ? (() => {
+                            const diff = Date.now() - new Date(createdAt).getTime();
+                            const minutes = Math.floor(diff / (1000 * 60));
+                            const hours = Math.floor(diff / (1000 * 60 * 60));
+                            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                            if (days > 0) return `${days} ${days === 1 ? 'Day' : 'Days'} ago`;
+                            if (hours > 0) return `${hours} ${hours === 1 ? 'Hour' : 'Hours'} ago`;
+                            return `${minutes} ${minutes === 1 ? 'Min' : 'Mins'} ago`;
+                          })()
+                        : 'Recently';
+                      
+                      // Choose icon based on notification type
+                      const getIcon = () => {
+                        const type = notification.type?.toLowerCase() || notification.notification_type?.toLowerCase() || '';
+                        if (type.includes('wifi') || type.includes('wifi')) return <FaWifi className="text-[#8B2323] w-5 h-5 mt-0.5 flex-shrink-0" />;
+                        if (type.includes('booking') || type.includes('confirm')) return <FaCheckCircle className="text-green-500 w-5 h-5 mt-0.5 flex-shrink-0" />;
+                        return <FaExclamationTriangle className="text-[#8B2323] w-5 h-5 mt-0.5 flex-shrink-0" />;
+                      };
+                      
+                      return (
+                        <div key={notification.id || notification.notification_id || idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                          {getIcon()}
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-semibold text-gray-800">
+                                {notification.title || notification.subject || 'Notification'}
+                              </span>
+                              <span className="text-xs text-gray-500">{timeAgo}</span>
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              {notification.message || notification.content || notification.body || 'No message'}
+                            </p>
                           </div>
-                          <p className="text-sm text-gray-600">
-                            Your booking for {provider} - {origin} to {destination} has been confirmed.
-                          </p>
                         </div>
-                      </div>
-                    )
-                  })}
+                      );
+                    })
+                  )}
                   </div>
                 </div>
               </div>
