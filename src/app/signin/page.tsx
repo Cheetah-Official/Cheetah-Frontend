@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FaApple, FaGoogle, FaFacebookF, FaLock } from "react-icons/fa";
 import Image from "next/image";
+import { useState } from "react";
 import { useLoginMutation } from "@/feature/auth/authApiSlice";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "@/feature/authentication/authSlice";
@@ -22,11 +23,13 @@ export default function SignInPage() {
   const router = useRouter();
   const dispatch = useDispatch();
   const { register, handleSubmit, formState: { errors } } = useForm<SignInForm>({ resolver: zodResolver(SignInSchema) });
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const [login, { isLoading, error }] = useLoginMutation();
 
   const onSubmit = async (data: SignInForm) => {
     try {
+      setAuthError(null); // Clear any previous errors
       console.log("Attempting login with:", { email: data.email });
       const response = await login(data).unwrap();
       console.log("Login response:", response);
@@ -51,6 +54,7 @@ export default function SignInPage() {
         const refreshTokenMatch = response.match(/"refreshToken"\s*:\s*"([^"]+)"/);
         const emailMatch = response.match(/"email"\s*:\s*"([^"]+)"/);
         const userIdMatch = response.match(/"userId"\s*:\s*(\d+)/);
+        const userTypeMatch = response.match(/"userType"\s*:\s*"([^"]+)"/);
         
         if (tokenMatch && tokenMatch[1]) {
           console.log("Sign in - Extracted token from string using regex");
@@ -59,6 +63,7 @@ export default function SignInPage() {
             refreshToken: refreshTokenMatch?.[1] || null,
             email: emailMatch?.[1] || null,
             userId: userIdMatch ? parseInt(userIdMatch[1]) : null,
+            userType: userTypeMatch?.[1] || null,
           };
         } else {
           // Last resort: try to parse as JSON
@@ -77,25 +82,35 @@ export default function SignInPage() {
       let accessToken: string | null = null;
       let refreshToken: string | null = null;
       let user: any = null;
+      let userType: string | null = null;
       
       if (responseData && typeof responseData === 'object') {
         accessToken = responseData.accessToken || responseData.access_token || null;
         refreshToken = responseData.refreshToken || responseData.refresh_token || null;
+        userType = responseData.userType || responseData.user_role || null;
         user = {
           email: responseData.email || responseData.user_email || data.email,
           userId: responseData.userId || responseData.user_id,
-          userRole: responseData.userType || responseData.user_role,
+          userRole: userType,
         };
       } else {
         // Fallback: maybe the data is at the top level
         console.log("Sign in - Falling back to top-level extraction");
         accessToken = response?.accessToken || response?.access_token || null;
         refreshToken = response?.refreshToken || response?.refresh_token || null;
+        userType = response?.userType || response?.user_role || null;
         user = {
           email: response?.email || response?.user_email || data.email,
           userId: response?.userId || response?.user_id,
-          userRole: response?.userType || response?.user_role,
+          userRole: userType,
         };
+      }
+
+      // Validate userType - must be PERSON
+      if (userType && userType !== "PERSON") {
+        console.error("Sign in - Invalid user type:", userType);
+        setAuthError("This account is not authorized for regular user login. Please use the transport company sign-in page.");
+        return; // Stop execution, don't proceed with login
       }
       
       console.log("Sign in - Final accessToken:", accessToken ? `✓ Found (length: ${accessToken.length})` : "✗ NOT FOUND");
@@ -149,6 +164,11 @@ export default function SignInPage() {
     } catch (err: any) {
       // Error is handled by RTK Query and displayed below
       console.error("Login failed:", err);
+      
+      // Set error message for display
+      const errorMessage = err?.message || err?.data?.message || (error as any)?.data?.message || (error as any)?.message || "Failed to sign in. Please check your credentials.";
+      setAuthError(errorMessage);
+      
       // Log more details about the error
       if (err?.data) {
         console.error("Error data:", err.data);
@@ -200,9 +220,9 @@ export default function SignInPage() {
             />
             {errors.password && <p className="text-red-600 text-[10px] sm:text-xs mt-0">{errors.password.message}</p>}
           </div>
-          {error && (
+          {(error || authError) && (
             <div className="text-red-600 text-[10px] sm:text-xs mb-1" role="alert">
-              {(error as any)?.data?.message || (error as any)?.message || "Failed to sign in. Please check your credentials."}
+              {authError || (error as any)?.data?.message || (error as any)?.message || "Failed to sign in. Please check your credentials."}
             </div>
           )}
           <button

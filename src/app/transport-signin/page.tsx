@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useState } from "react";
 import { FaApple, FaGoogle, FaFacebookF, FaLock, FaFileAlt } from "react-icons/fa";
 import { useLoginMutation } from "@/feature/auth/authApiSlice";
 import { useDispatch } from "react-redux";
@@ -23,11 +24,13 @@ export default function TransportSignInPage() {
   const { register, handleSubmit, formState: { errors } } = useForm<TransportSignInForm>({ 
     resolver: zodResolver(TransportSignInSchema) 
   });
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const [login, { isLoading, error }] = useLoginMutation();
 
   const onSubmit = async (data: TransportSignInForm) => {
     try {
+      setAuthError(null); // Clear any previous errors
       console.log("Attempting transport login with:", { email: data.companyName });
       const response = await login({ email: data.companyName.trim(), password: data.password }).unwrap();
       console.log("Transport login response:", response);
@@ -51,6 +54,7 @@ export default function TransportSignInPage() {
         const refreshTokenMatch = response.match(/"refreshToken"\s*:\s*"([^"]+)"/);
         const emailMatch = response.match(/"email"\s*:\s*"([^"]+)"/);
         const userIdMatch = response.match(/"userId"\s*:\s*(\d+)/);
+        const userTypeMatch = response.match(/"userType"\s*:\s*"([^"]+)"/);
         
         if (tokenMatch && tokenMatch[1]) {
           console.log("Transport sign in - Extracted token from string using regex");
@@ -59,6 +63,7 @@ export default function TransportSignInPage() {
             refreshToken: refreshTokenMatch?.[1] || null,
             email: emailMatch?.[1] || null,
             userId: userIdMatch ? parseInt(userIdMatch[1]) : null,
+            userType: userTypeMatch?.[1] || null,
           };
         } else {
           // Last resort: try to parse as JSON
@@ -77,27 +82,37 @@ export default function TransportSignInPage() {
       let accessToken: string | null = null;
       let refreshToken: string | null = null;
       let user: any = null;
+      let userType: string | null = null;
       
       if (responseData && typeof responseData === 'object') {
         accessToken = responseData.accessToken || responseData.access_token || null;
         refreshToken = responseData.refreshToken || responseData.refresh_token || null;
+        userType = responseData.userType || responseData.user_role || null;
         user = {
           companyName: responseData.companyName || data.companyName,
           email: responseData.email,
           userId: responseData.userId || responseData.user_id,
-          userRole: responseData.userType || responseData.user_role || "TRANSPORT_COMPANY",
+          userRole: userType || "TRANSPORT_COMPANY",
         };
       } else {
         // Fallback: maybe the data is at the top level
         console.log("Transport sign in - Falling back to top-level extraction");
         accessToken = response?.accessToken || response?.access_token || null;
         refreshToken = response?.refreshToken || response?.refresh_token || null;
+        userType = response?.userType || response?.user_role || null;
         user = {
           companyName: response?.companyName || data.companyName,
           email: response?.email,
           userId: response?.userId || response?.user_id,
-          userRole: response?.userType || response?.user_role || "TRANSPORT_COMPANY",
+          userRole: userType || "TRANSPORT_COMPANY",
         };
+      }
+
+      // Validate userType - must be TRANSPORT_COMPANY
+      if (userType && userType !== "TRANSPORT_COMPANY") {
+        console.error("Transport sign in - Invalid user type:", userType);
+        setAuthError("This account is not authorized for transport company login. Please use the regular sign-in page.");
+        return; // Stop execution, don't proceed with login
       }
 
       console.log("Transport sign in - Final accessToken:", accessToken ? `✓ Found (length: ${accessToken.length})` : "✗ NOT FOUND");
@@ -142,6 +157,11 @@ export default function TransportSignInPage() {
       }
     } catch (err: any) {
       console.error("Transport login failed:", err);
+      
+      // Set error message for display
+      const errorMessage = err?.message || err?.data?.message || (error as any)?.data?.message || (error as any)?.message || "Failed to sign in";
+      setAuthError(errorMessage);
+      
       if (err?.data) {
         console.error("Error data:", err.data);
       }
@@ -198,9 +218,9 @@ export default function TransportSignInPage() {
             />
             {errors.password && <p className="text-red-600 text-xs mt-1">{errors.password.message}</p>}
           </div>
-          {error && (
+          {(error || authError) && (
             <div className="text-red-600 text-xs sm:text-sm mb-2" role="alert">
-              {(error as any)?.data?.message || (error as any)?.message || "Failed to sign in"}
+              {authError || (error as any)?.data?.message || (error as any)?.message || "Failed to sign in"}
             </div>
           )}
           <button
