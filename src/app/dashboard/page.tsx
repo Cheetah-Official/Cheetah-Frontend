@@ -8,10 +8,16 @@ import { useAuth } from "@/lib/useAuth"
 import { useDispatch, useSelector } from "react-redux"
 import { logOut, selectCurrentAccessToken, selectCurrentUser } from "@/feature/authentication/authSlice"
 import { useGetAuthenticatedUserQuery } from "@/feature/auth/authApiSlice"
-import { useGetNotificationsQuery } from "@/feature/notifications/notificationApiSlice"
+import { 
+  useGetNotificationsQuery, 
+  useMarkAsReadMutation, 
+  useDeleteNotificationMutation,
+  useMarkAllAsReadMutation,
+  useGetUnreadCountQuery
+} from "@/feature/notifications/notificationApiSlice"
 import { useCreateBookingMutation } from "@/feature/bookings/bookingApiSlice"
 import { useGetBookingsByUserQuery } from "@/feature/bookings/bookingApiSlice"
-import { useFilterSchedulesQuery } from "@/feature/schedules/scheduleApiSlice"
+import { useFilterSchedulesQuery, useGetScheduleByIdQuery } from "@/feature/schedules/scheduleApiSlice"
 import {
   Sidebar,
   DashboardHeader,
@@ -152,12 +158,51 @@ function DashboardContent() {
     { skip: !hasToken }
   );
   
+  // Get unread count
+  const { data: unreadCountData } = useGetUnreadCountQuery(undefined as any, { skip: !hasToken });
+  const unreadCount = typeof unreadCountData === 'number' ? unreadCountData : (unreadCountData?.total || unreadCountData?.unreadCount || 0);
+  
+  // Mutations for notifications
+  const [markAsRead] = useMarkAsReadMutation();
+  const [deleteNotification] = useDeleteNotificationMutation();
+  const [markAllAsRead] = useMarkAllAsReadMutation();
+  
   // Extract notifications array from response (handle different response formats)
-  const notifications = Array.isArray(notificationsResponse?.data) 
-    ? notificationsResponse.data 
-    : Array.isArray(notificationsResponse) 
-    ? notificationsResponse 
-    : [];
+  const notifications = useMemo(() => {
+    const raw = notificationsResponse?.content || 
+                notificationsResponse?.data?.content || 
+                notificationsResponse?.data || 
+                notificationsResponse || 
+                [];
+    return Array.isArray(raw) ? raw : [];
+  }, [notificationsResponse]);
+  
+  // Handle mark as read
+  const handleMarkAsRead = async (notificationId: number) => {
+    try {
+      await markAsRead(notificationId).unwrap();
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
+    }
+  };
+  
+  // Handle delete notification
+  const handleDeleteNotification = async (notificationId: number) => {
+    try {
+      await deleteNotification(notificationId).unwrap();
+    } catch (error) {
+      console.error("Failed to delete notification:", error);
+    }
+  };
+  
+  // Handle mark all as read
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllAsRead(undefined as any).unwrap();
+    } catch (error) {
+      console.error("Failed to mark all notifications as read:", error);
+    }
+  };
 
   // Booking mutation for seat allocation flow
   const [createBooking, { isLoading: creatingBooking }] = useCreateBookingMutation()
@@ -236,6 +281,8 @@ function DashboardContent() {
               logo: "/Logo.png",
               price: p.price || primarySchedule?.price || 0,
               primarySchedule,
+              companyId: p.companyId || primarySchedule?.companyId,
+              schedules: schedules,
             };
           })
         : [],
@@ -245,13 +292,48 @@ function DashboardContent() {
   // Choose an active (latest upcoming) booking for the Activity left panel and Trip Progress
   const activeBooking = (() => {
     if (!userBookings || userBookings.length === 0) return null
-    const parseTime = (b: any) => new Date(b.schedule_details?.departure_time || b.departure_time || 0).getTime()
+    const parseTime = (b: any) => {
+      const time = b.schedule_details?.departure_time || 
+                   b.schedule_details?.departureTime ||
+                   b.departureTime || 
+                   b.departure_time || 
+                   0;
+      return new Date(time).getTime();
+    }
     const now = Date.now()
     const future = userBookings.filter((b: any) => parseTime(b) >= now).sort((a: any, b: any) => parseTime(a) - parseTime(b))
     if (future.length > 0) return future[0]
     // else pick most recent past
     return userBookings.slice().sort((a: any, b: any) => parseTime(b) - parseTime(a))[0]
   })()
+
+  // Fetch schedule details for active booking to get complete information
+  const activeBookingScheduleId = activeBooking?.scheduleId || 
+                                   activeBooking?.schedule_id || 
+                                   activeBooking?.schedule_details?.schedule_id ||
+                                   activeBooking?.schedule_details?.id;
+  const { data: activeBookingSchedule } = useGetScheduleByIdQuery(
+    activeBookingScheduleId ? Number(activeBookingScheduleId) : 0,
+    { skip: !activeBookingScheduleId }
+  );
+
+  // Merge schedule data with booking data for complete information
+  const enrichedActiveBooking = useMemo(() => {
+    if (!activeBooking) return null;
+    return {
+      ...activeBooking,
+      schedule_details: {
+        ...activeBooking.schedule_details,
+        ...activeBookingSchedule,
+        // Prefer schedule data over booking data
+        origin: activeBookingSchedule?.origin || activeBooking.schedule_details?.origin || activeBooking.origin,
+        destination: activeBookingSchedule?.destination || activeBooking.schedule_details?.destination || activeBooking.destination,
+        departure_time: activeBookingSchedule?.departureTime || activeBookingSchedule?.departure_time || activeBooking.schedule_details?.departure_time || activeBooking.departureTime,
+        companyName: activeBookingSchedule?.companyName || activeBooking.schedule_details?.companyName || activeBooking.companyName,
+        vehicleNo: activeBookingSchedule?.vehicleNo || activeBookingSchedule?.vehicle?.vehicleNo || activeBooking.schedule_details?.vehicleNo,
+      }
+    };
+  }, [activeBooking, activeBookingSchedule]);
 
   // Handle date input formatting
   const handleDateChange = (value: string, setDate: (date: string) => void) => {
@@ -436,14 +518,19 @@ function DashboardContent() {
                   to={to || "Abuja"}
                   departure={departure}
                   returnDate={returnDate}
-                  adults={adults}
-                  children={children}
-                  totalPrice={((selectedCompareCompany?.price as number | undefined) || 0) * totalPassengers}
+                  totalPrice={0}
                   onDepartureChange={setDeparture}
                   onReturnDateChange={setReturnDate}
-                  onAdultsChange={setAdults}
-                  onChildrenChange={setChildren}
-                  onProceed={() => setShowSeatAllocation(true)}
+                  onProceed={(selectedSchedule) => {
+                    if (selectedSchedule) {
+                      // Update the company with the selected schedule
+                      setSelectedCompareCompany({
+                        ...selectedCompareCompany,
+                        primarySchedule: selectedSchedule,
+                      });
+                    }
+                    setShowSeatAllocation(true);
+                  }}
                   onBack={() => setSelectedCompareCompany(null)}
                 />
             </div>
@@ -498,7 +585,7 @@ function DashboardContent() {
 
         {/* Notifications Tab */}
         {activeTab === "activity" && (
-          <div className="space-y-4 sm:space-y-6">
+          <div className="space-y-4 sm:space-y-6 overflow-hidden">
             {/* Header with Notifications title and Booking History button */}
             <div className="flex items-center justify-between">
               <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">Notifications</h2>
@@ -525,9 +612,9 @@ function DashboardContent() {
                 <div className="text-gray-600">Loading notifications...</div>
               </div>
             ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:items-start max-h-[calc(100vh-200px)] overflow-hidden">
               {/* Left Column - Stacked Cards */}
-              <div className="flex flex-col gap-4 sm:gap-6 h-full">
+              <div className="flex flex-col gap-4 sm:gap-6 overflow-hidden">
                 {/* Top Left - Ticket Details Card */}
                 <div className="bg-[#F2F2F2] rounded-xl p-3 sm:p-4 shadow-sm">
                 <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3">Ticket Details</h3>
@@ -537,59 +624,105 @@ function DashboardContent() {
                   <div className="flex items-center gap-2">
                     <div className="w-10 h-10 rounded-full border border-gray-300 bg-white flex items-center justify-center overflow-hidden">
                       <Image 
-                        src="/CHISCO.png" 
-                        alt="CHISCO express" 
+                        src="/Logo.png" 
+                        alt={enrichedActiveBooking?.schedule_details?.companyName || "Cheetah Transport"} 
                         width={40} 
                         height={40} 
                         className="w-10 h-10 object-contain"
                       />
                     </div>
                     <div>
-                      <h4 className="text-base font-bold text-gray-800">Chisco</h4>
+                      <h4 className="text-base font-bold text-gray-800">
+                        {enrichedActiveBooking?.schedule_details?.companyName || enrichedActiveBooking?.companyName || "Cheetah Transport"}
+                      </h4>
                       <p className="text-xs text-gray-600">
-                        {activeBooking ? `${activeBooking.schedule_details?.origin || activeBooking.origin || "Lagos"} - ${activeBooking.schedule_details?.destination || activeBooking.destination || "Abuja"}` : "Lagos - Abuja"}
+                        {enrichedActiveBooking 
+                          ? `${enrichedActiveBooking.schedule_details?.origin || enrichedActiveBooking.origin || "Lagos"} - ${enrichedActiveBooking.schedule_details?.destination || enrichedActiveBooking.destination || "Abuja"}`
+                          : "Lagos - Abuja"}
                       </p>
+                      {enrichedActiveBooking?.schedule_details?.vehicleNo && (
+                        <p className="text-xs text-gray-500 mt-0.5">Vehicle: {enrichedActiveBooking.schedule_details.vehicleNo}</p>
+                      )}
                     </div>
                   </div>
                   <div className="border border-gray-300 px-2 py-1 rounded-full bg-white">
                     <span className="text-xs font-medium text-gray-800">
-                      <span className="font-bold">{activeBooking?.passenger_count ?? (activeBooking?.passengers?.length ?? 2)}</span> Passengers
+                      <span className="font-bold">{enrichedActiveBooking?.passenger_count ?? (enrichedActiveBooking?.passengers?.length ?? 1)}</span> Passenger{enrichedActiveBooking?.passenger_count !== 1 ? 's' : ''}
                     </span>
                   </div>
                 </div>
 
-                {/* Departure Date and Days Remaining */}
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <p className="text-xs text-gray-500 mb-0.5">Departure Date</p>
-                      <p className="text-sm font-bold text-gray-800">
-                        {activeBooking?.schedule_details?.departure_time 
-                          ? (() => {
-                              const date = new Date(activeBooking.schedule_details.departure_time);
-                              const day = date.getDate();
-                              const month = date.toLocaleDateString('en-US', { month: 'long' });
-                              const year = date.getFullYear();
-                              const suffix = day === 1 || day === 21 || day === 31 ? 'st' : day === 2 || day === 22 ? 'nd' : day === 3 || day === 23 ? 'rd' : 'th';
-                              return `${month} ${day}${suffix}, ${year}`;
-                            })()
-                          : "July 28th, 2025"}
-                      </p>
+                {/* Departure Date and Time Remaining */}
+                {enrichedActiveBooking ? (
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p className="text-xs text-gray-500 mb-0.5">Departure Date</p>
+                        <p className="text-sm font-bold text-gray-800">
+                          {enrichedActiveBooking.schedule_details?.departure_time 
+                            ? (() => {
+                                const date = new Date(enrichedActiveBooking.schedule_details.departure_time);
+                                const day = date.getDate();
+                                const month = date.toLocaleDateString('en-US', { month: 'long' });
+                                const year = date.getFullYear();
+                                const suffix = day === 1 || day === 21 || day === 31 ? 'st' : day === 2 || day === 22 ? 'nd' : day === 3 || day === 23 ? 'rd' : 'th';
+                                return `${month} ${day}${suffix}, ${year}`;
+                              })()
+                            : "N/A"}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        {(() => {
+                          if (enrichedActiveBooking.schedule_details?.departure_time) {
+                            const diffMs = new Date(enrichedActiveBooking.schedule_details.departure_time).getTime() - Date.now();
+                            if (diffMs > 0) {
+                              const minutes = Math.floor(diffMs / (1000 * 60));
+                              const hours = Math.floor(minutes / 60);
+                              const days = Math.floor(hours / 24);
+                              const remainingHours = hours % 24;
+                              const remainingMinutes = minutes % 60;
+                              
+                              if (days > 0) {
+                                return <p className="text-xl font-bold text-gray-800">{days} {days === 1 ? 'day' : 'days'} {remainingHours}h</p>;
+                              } else if (hours > 0) {
+                                return <p className="text-xl font-bold text-gray-800">{hours}h {remainingMinutes}m</p>;
+                              } else {
+                                return <p className="text-xl font-bold text-gray-800">{minutes}m</p>;
+                              }
+                            } else {
+                              return <p className="text-xl font-bold text-gray-500">Departed</p>;
+                            }
+                          }
+                          return <p className="text-xl font-bold text-gray-800">N/A</p>;
+                        })()}
+                      </div>
                     </div>
-                    <p className="text-xl font-bold text-gray-800">
-                      {(() => {
-                        if (activeBooking?.schedule_details?.departure_time) {
-                          const days = Math.ceil((new Date(activeBooking.schedule_details.departure_time).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-                          return days > 0 ? days : 0
-                        }
-                        return 4
-                      })()} days
-                    </p>
+                    {(() => {
+                      if (enrichedActiveBooking.schedule_details?.departure_time) {
+                        const departureTime = new Date(enrichedActiveBooking.schedule_details.departure_time).getTime();
+                        const bookingTime = enrichedActiveBooking.createdAt || enrichedActiveBooking.created_at;
+                        const bookingTimeMs = bookingTime ? new Date(bookingTime).getTime() : Date.now();
+                        const totalDurationMs = departureTime - bookingTimeMs;
+                        const remainingMs = departureTime - Date.now();
+                        const progress = totalDurationMs > 0 ? Math.max(0, Math.min(100, (remainingMs / totalDurationMs) * 100)) : 0;
+                        
+                        return (
+                          <div className="w-full bg-gray-200 rounded-full h-1.5">
+                            <div 
+                              className={`h-1.5 rounded-full transition-all ${remainingMs > 0 ? 'bg-[#8B2323]' : 'bg-gray-400'}`} 
+                              style={{ width: `${progress}%` }}
+                            ></div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-1.5">
-                    <div className="bg-[#ad6e6e] h-1.5 rounded-full" style={{ width: '75%' }}></div>
+                ) : (
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-500 text-center py-4">No active booking</p>
                   </div>
-                </div>
+                )}
 
                 {/* Included Features */}
                 <div className="flex flex-row gap-2 mb-4">
@@ -610,23 +743,46 @@ function DashboardContent() {
                 {/* Download Ticket Button */}
                 <div className="flex justify-end">
                   <button
-                    className="bg-[#8B2323] text-white py-2 px-6 rounded-lg font-semibold hover:bg-[#7A1F1F] transition-colors text-sm cursor-pointer"
+                    className="bg-[#8B2323] text-white py-2 px-6 rounded-lg font-semibold hover:bg-[#7A1F1F] transition-colors text-sm cursor-pointer disabled:bg-gray-300 disabled:cursor-not-allowed"
                     onClick={() => {
-                      if (activeBooking?.schedule_details?.schedule_id) {
-                        router.push(`/bookings/${encodeURIComponent(activeBooking.schedule_details.schedule_id)}?passengers=${encodeURIComponent(activeBooking.passenger_count ?? (activeBooking.passengers?.length ?? 1))}`)
+                      if (enrichedActiveBooking?.id) {
+                        router.push(`/dashboard/booking-history`);
                       }
                     }}
+                    disabled={!enrichedActiveBooking}
                   >
-                    Download Ticket
+                    View Details
                   </button>
                 </div>
                 </div>
 
                 {/* Bottom Left - Notification List Card */}
-                <div className="bg-[#F2F2F2] rounded-xl p-4 sm:p-6 shadow-sm flex flex-col flex-1 min-h-0 lg:h-full">
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">Notification</h3>
-                  <div className="space-y-4 flex-1 overflow-y-auto">
-                  {notifications.length === 0 ? (
+                <div className="bg-[#F2F2F2] rounded-xl p-4 sm:p-6 shadow-sm flex flex-col max-h-[400px]">
+                  <div className="flex items-center justify-between mb-4 flex-shrink-0">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-800">Notification</h3>
+                    {notifications.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        {unreadCount > 0 && (
+                          <span className="text-xs bg-[#8B2323] text-white px-2 py-1 rounded-full">
+                            {unreadCount} unread
+                          </span>
+                        )}
+                        <button
+                          onClick={handleMarkAllAsRead}
+                          className="text-xs text-[#8B2323] hover:text-[#7A1F1F] font-medium cursor-pointer"
+                          title="Mark all as read"
+                        >
+                          Mark all read
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar flex-1 min-h-0">
+                  {loadingNotifications ? (
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <p className="text-sm text-gray-600">Loading notifications...</p>
+                    </div>
+                  ) : notifications.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-8">
                       <FaExclamationTriangle className="text-gray-400 w-12 h-12 mb-4" />
                       <p className="text-sm text-gray-600 font-medium">No Notifications Yet</p>
@@ -651,21 +807,47 @@ function DashboardContent() {
                       const getIcon = () => {
                         const type = notification.type?.toLowerCase() || notification.notification_type?.toLowerCase() || '';
                         if (type.includes('wifi') || type.includes('wifi')) return <FaWifi className="text-[#8B2323] w-5 h-5 mt-0.5 flex-shrink-0" />;
-                        if (type.includes('booking') || type.includes('confirm')) return <FaCheckCircle className="text-green-500 w-5 h-5 mt-0.5 flex-shrink-0" />;
+                        if (type.includes('booking') || type.includes('confirm') || type === 'success') return <FaCheckCircle className="text-green-500 w-5 h-5 mt-0.5 flex-shrink-0" />;
                         return <FaExclamationTriangle className="text-[#8B2323] w-5 h-5 mt-0.5 flex-shrink-0" />;
                       };
                       
+                      const isRead = notification.read || notification.readAt;
+                      const notificationId = notification.id || notification.notification_id;
+                      
                       return (
-                        <div key={notification.id || notification.notification_id || idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                        <div 
+                          key={notificationId || idx} 
+                          className={`flex items-start gap-3 p-3 rounded-lg transition-all ${
+                            isRead ? 'bg-gray-50' : 'bg-white border-l-4 border-[#8B2323]'
+                          }`}
+                        >
                           {getIcon()}
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="font-semibold text-gray-800">
+                              <span className={`font-semibold ${isRead ? 'text-gray-600' : 'text-gray-800'}`}>
                                 {notification.title || notification.subject || 'Notification'}
                               </span>
-                              <span className="text-xs text-gray-500">{timeAgo}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-500 whitespace-nowrap">{timeAgo}</span>
+                                {!isRead && (
+                                  <button
+                                    onClick={() => handleMarkAsRead(notificationId)}
+                                    className="text-xs text-[#8B2323] hover:text-[#7A1F1F] cursor-pointer"
+                                    title="Mark as read"
+                                  >
+                                    ✓
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleDeleteNotification(notificationId)}
+                                  className="text-xs text-red-500 hover:text-red-700 cursor-pointer"
+                                  title="Delete"
+                                >
+                                  ×
+                                </button>
+                              </div>
                             </div>
-                            <p className="text-sm text-gray-600">
+                            <p className={`text-sm ${isRead ? 'text-gray-500' : 'text-gray-700'}`}>
                               {notification.message || notification.content || notification.body || 'No message'}
                             </p>
                           </div>
@@ -706,16 +888,16 @@ function DashboardContent() {
                     <div className="flex justify-between items-center py-3 border-b border-gray-200">
                       <span className="text-sm text-gray-600">Trip Date:</span>
                       <span className="text-sm text-gray-800 font-medium">
-                        {activeBooking?.schedule_details?.departure_time 
-                          ? new Date(activeBooking.schedule_details.departure_time).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-                          : "June 24, 2025"}
+                        {enrichedActiveBooking?.schedule_details?.departure_time 
+                          ? new Date(enrichedActiveBooking.schedule_details.departure_time).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                          : "N/A"}
                       </span>
                     </div>
                     
                     <div className="flex justify-between items-center py-3 border-b border-gray-200">
                       <span className="text-sm text-gray-600">Transport Provider:</span>
                       <span className="text-sm text-gray-800 font-medium">
-                        {activeBooking?.schedule_details?.provider_name || activeBooking?.provider_name || "Chisco"}
+                        {enrichedActiveBooking?.schedule_details?.companyName || enrichedActiveBooking?.companyName || "Cheetah Transport"}
                       </span>
                     </div>
                     
