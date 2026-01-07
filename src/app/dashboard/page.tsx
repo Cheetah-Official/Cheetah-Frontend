@@ -2,13 +2,16 @@
 
 import Image from "next/image"
 import { FaExchangeAlt, FaCalendarAlt, FaChevronLeft, FaChevronRight, FaExclamationTriangle, FaWifi, FaCheckCircle } from "react-icons/fa"
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, useMemo, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/useAuth"
 import { useDispatch, useSelector } from "react-redux"
 import { logOut, selectCurrentAccessToken, selectCurrentUser } from "@/feature/authentication/authSlice"
 import { useGetAuthenticatedUserQuery } from "@/feature/auth/authApiSlice"
 import { useGetNotificationsQuery } from "@/feature/notifications/notificationApiSlice"
+import { useCreateBookingMutation } from "@/feature/bookings/bookingApiSlice"
+import { useGetBookingsByUserQuery } from "@/feature/bookings/bookingApiSlice"
+import { useFilterSchedulesQuery } from "@/feature/schedules/scheduleApiSlice"
 import {
   Sidebar,
   DashboardHeader,
@@ -18,20 +21,6 @@ import {
   SettingsTab,
   SeatAllocation,
 } from "@/components/dashboard"
-
-const companies = [
-  { name: "Peace Mass", logo: "/PeaceMass-Logo.jpg", price: 32000, route: "Lagos - Abuja" },
-  { name: "GIGM", logo: "/GIGMotors_Logo 1.png", price: 36000, route: "Lagos - Abuja" },
-  { name: "GUO", logo: "/GUO.png", price: 34000, route: "Lagos - Abuja" },
-  { name: "Chisco", logo: "/CHISCO.png", price: 26000, route: "Lagos - Abuja" },
-]
-
-const compareCompanies = [
-  { name: "Peace Mass", logo: "/PeaceMass-Logo.jpg", price: 32000, route: "Lagos - Abuja" },
-  { name: "GIGM", logo: "/GIGMotors_Logo 1.png", price: 36000, route: "Lagos - Abuja" },
-  { name: "GUO", logo: "/GUO.png", price: 34000, route: "Lagos - Abuja" },
-  { name: "Chisco", logo: "/CHISCO.png", price: 26000, route: "Lagos - Abuja" },
-]
 
 const totalPages = 4
 
@@ -141,15 +130,21 @@ function DashboardContent() {
     }
   }, [activeTab, from, to])
 
-  // TODO: Replace with RTK Query hooks
-  // Activity: fetch user's bookings to populate Activity tab
-  // const { data: userBookings, isLoading: loadingBookings } = useGetBookingsByUserQuery({
-  //   userId: user?.id || 0,
-  //   page: 0,
-  //   size: 20,
-  // });
-  const userBookings: any[] = []; // TODO: Get from RTK Query
-  const loadingBookings = false; // TODO: Get from RTK Query
+  // Fetch user's bookings to populate Activity tab
+  const userId = user?.id || user?.userId || 0;
+  const { data: bookingsResponse, isLoading: loadingBookings } = useGetBookingsByUserQuery(
+    { userId, page: 0, size: 20 },
+    { skip: !hasToken || !userId }
+  );
+  
+  // Extract bookings array from response
+  const userBookings = Array.isArray(bookingsResponse?.content)
+    ? bookingsResponse.content
+    : Array.isArray(bookingsResponse?.data)
+    ? bookingsResponse.data
+    : Array.isArray(bookingsResponse)
+    ? bookingsResponse
+    : [];
 
   // Fetch notifications from API
   const { data: notificationsResponse, isLoading: loadingNotifications } = useGetNotificationsQuery(
@@ -164,9 +159,88 @@ function DashboardContent() {
     ? notificationsResponse 
     : [];
 
-  // TODO: Provider statistics - Need to check if this endpoint exists in Swagger
-  // If not, may need to create a new endpoint or use existing schedule/trip endpoints
-  const providerStats = null; // TODO: Implement with appropriate RTK Query hook
+  // Booking mutation for seat allocation flow
+  const [createBooking, { isLoading: creatingBooking }] = useCreateBookingMutation()
+
+  // Fetch schedules using filter endpoint - filter by route and date if selected
+  const { data: schedulesResponse, isLoading: loadingSchedules } = useFilterSchedulesQuery(
+    {
+      ...(from && { origin: from }),
+      ...(to && { destination: to }),
+      ...(departure && { startDate: new Date(departure).toISOString() }),
+      status: 'OPEN', // Only show open schedules
+      page: 0,
+      size: 50,
+    },
+    { skip: !hasToken || !from || !to } // Only fetch when both from and to are selected
+  );
+  
+  // Extract schedules from response
+  const filteredSchedules = Array.isArray(schedulesResponse?.content)
+    ? schedulesResponse.content
+    : Array.isArray(schedulesResponse?.data)
+    ? schedulesResponse.data
+    : Array.isArray(schedulesResponse)
+    ? schedulesResponse
+    : [];
+  
+  // Group schedules by company/provider to show in transports tab
+  const providerStats = useMemo(() => {
+    if (loadingSchedules) return null;
+    
+    const providersMap = new Map();
+    
+    filteredSchedules.forEach((schedule: any) => {
+      const companyName = schedule.companyName || schedule.company?.name || schedule.provider_name || 'Unknown Provider';
+      const companyId = schedule.companyId || schedule.company?.id;
+      const price = schedule.price || 0;
+      
+      if (!providersMap.has(companyId)) {
+        providersMap.set(companyId, {
+          provider_name: companyName,
+          companyId,
+          price,
+          schedules: [schedule],
+        });
+      } else {
+        const provider = providersMap.get(companyId);
+        provider.schedules.push(schedule);
+        // Use minimum price or average price
+        provider.price = Math.min(provider.price, price);
+      }
+    });
+    
+    return {
+      providers: Array.from(providersMap.values()),
+    };
+  }, [filteredSchedules, loadingSchedules]);
+  
+  // Calculate total pages based on providers
+  const calculatedTotalPages = useMemo(() => {
+    if (providerStats && Array.isArray(providerStats.providers)) {
+      return Math.ceil(providerStats.providers.length / 4); // 4 companies per page
+    }
+    return totalPages;
+  }, [providerStats, totalPages]);
+
+  // Map provider stats to company objects for tabs
+  const providerCompanies = useMemo(
+    () =>
+      providerStats && Array.isArray(providerStats.providers)
+        ? (providerStats.providers as any[]).map((p: any) => {
+            const schedules = Array.isArray(p.schedules) ? p.schedules : [];
+            // Pick the first schedule for now (could be earliest/cheapest)
+            const primarySchedule = schedules[0] || null;
+            return {
+              name: p.provider_name || p.name || "Provider",
+              logo: "/Logo.png",
+              price: p.price || primarySchedule?.price || 0,
+              primarySchedule,
+            };
+          })
+        : [],
+    [providerStats],
+  );
 
   // Choose an active (latest upcoming) booking for the Activity left panel and Trip Progress
   const activeBooking = (() => {
@@ -200,13 +274,30 @@ function DashboardContent() {
   }
 
   const totalPassengers = adults + children
-  const selectedPrice = 26000 // Default price, can be made dynamic based on selected transporter
+  
+  // Calculate price based on available providers
+  const selectedPrice = useMemo(() => {
+    if (providerStats && Array.isArray(providerStats.providers) && providerStats.providers.length > 0) {
+      // Use minimum price from available providers
+      return Math.min(...providerStats.providers.map((p: any) => p.price || 0));
+    }
+    return 0; // No price if no providers available
+  }, [providerStats]);
+  
   const totalPrice = selectedPrice * totalPassengers
 
   const handleProceed = () => {
     if (!from || !to || !departure) {
       // Lightweight validation for demo purposes
       alert("Please select From, To and Departure date")
+      return
+    }
+    if (totalPassengers === 0) {
+      alert("Please select at least one passenger")
+      return
+    }
+    if (selectedPrice === 0 || !providerStats || !Array.isArray(providerStats.providers) || providerStats.providers.length === 0) {
+      alert("No available transporters found for this route. Please try a different route.")
       return
     }
     const params = new URLSearchParams({
@@ -269,10 +360,12 @@ function DashboardContent() {
             adults={adults}
             children={children}
             currentPage={currentPage}
-            totalPages={totalPages}
-            companies={Array.isArray((providerStats as any)?.providers) && (providerStats as any).providers.length > 0
-              ? (providerStats as any).providers.map((p: any) => ({ name: p.provider_name || p.name || 'Provider', logo: '/Logo.png', price: p.price || 26000 }))
-              : companies}
+            totalPages={calculatedTotalPages}
+            companies={
+              loadingSchedules
+                ? []
+                : providerCompanies
+            }
             totalPrice={totalPrice}
             onFromChange={setFrom}
             onToChange={setTo}
@@ -295,9 +388,44 @@ function DashboardContent() {
                 from={from || "Lagos"}
                 to={to || "Abuja"}
                 onBack={() => setShowSeatAllocation(false)}
-                onProceed={() => {
-                  // TODO: Navigate to payment/confirmation page
-                  console.log("Proceeding to payment...")
+                onProceed={async ({ scheduleId, seatNumber }) => {
+                  if (!user) {
+                    alert("Please sign in again to complete your booking.")
+                    router.replace("/signin")
+                    return
+                  }
+
+                  const userId = (user as any)?.id || (user as any)?.userId
+                  if (!userId) {
+                    alert("Unable to determine your user ID. Please sign in again.")
+                    router.replace("/signin")
+                    return
+                  }
+
+                  try {
+                    const res: any = await createBooking({
+                      scheduleId,
+                      userId,
+                      seatNumber: String(seatNumber),
+                    }).unwrap()
+
+                    const paymentLink =
+                      res?.paymentLink ||
+                      res?.data?.paymentLink
+
+                    if (paymentLink) {
+                      // Redirect directly to Flutterwave payment link
+                      window.location.href = paymentLink
+                    } else {
+                      alert("Booking created, but payment link was not returned.")
+                    }
+                  } catch (err: any) {
+                    console.error("Error creating booking:", err)
+                    alert(
+                      err?.data?.message ||
+                        "Failed to create booking. Please try again.",
+                    )
+                  }
                 }}
               />
             ) : selectedCompareCompany ? (
@@ -324,8 +452,8 @@ function DashboardContent() {
                 from={from || "Lagos"}
                 to={to || "Abuja"}
                 currentPage={currentPage}
-                totalPages={totalPages}
-                companies={compareCompanies}
+                totalPages={calculatedTotalPages}
+                companies={loadingSchedules ? [] : providerCompanies}
                 selectedCompany={selectedCompareCompany}
                 onFromChange={setFrom}
                 onToChange={setTo}

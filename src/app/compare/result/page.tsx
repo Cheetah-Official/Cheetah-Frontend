@@ -4,26 +4,27 @@ import Image from "next/image";
 import { useState, useEffect, Suspense } from "react";
 import { FaTimes } from "react-icons/fa";
 import { useRouter, useSearchParams } from "next/navigation";
-// TODO: Replace with RTK Query hooks
-// import { useSearchSchedulesQuery } from "@/feature/schedules/scheduleApiSlice";
+import { useFilterSchedulesQuery } from "@/feature/schedules/scheduleApiSlice";
+import { useSelector } from "react-redux";
+import { selectCurrentAccessToken, selectCurrentUser } from "@/feature/authentication/authSlice";
+import { useGetAuthenticatedUserQuery } from "@/feature/auth/authApiSlice";
+import { useMemo } from "react";
 
 type Route = {
-  schedule_id: string;
+  schedule_id: number;
   provider_name: string;
-  vehicle_type: string;
+  vehicle_type?: string;
   origin: string;
   destination: string;
   departure_time: string;
   arrival_time: string;
-  duration_minutes: number;
+  duration_minutes?: number;
   available_seats: number;
   total_seats: number;
-  amenities: string[];
+  amenities?: string[];
   base_price: number;
-};
-
-type CompareData = {
-  routes?: Route[];
+  companyId?: number;
+  vehicleNo?: string;
 };
 
 function CompareResultContent() {
@@ -32,6 +33,7 @@ function CompareResultContent() {
   const [returnDate, setReturnDate] = useState("");
   const [from, setFrom] = useState<string>("");
   const [to, setTo] = useState<string>("");
+  const [selectedSchedule, setSelectedSchedule] = useState<Route | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const [minPrice, setMinPrice] = useState<string>("");
@@ -41,6 +43,18 @@ function CompareResultContent() {
   const [dMinPrice, setDMinPrice] = useState<string>("");
   const [dMaxPrice, setDMaxPrice] = useState<string>("");
   const [dProvidersCsv, setDProvidersCsv] = useState<string>("");
+  
+  // Authentication
+  const accessToken = useSelector(selectCurrentAccessToken);
+  const reduxUser = useSelector(selectCurrentUser);
+  const localStorageToken = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  const hasToken = !!(accessToken || localStorageToken);
+  
+  const { data: authUser } = useGetAuthenticatedUserQuery(undefined, {
+    skip: !hasToken,
+  });
+  
+  const user = authUser || reduxUser;
 
   // Set default dates on component mount
   useEffect(() => {
@@ -61,8 +75,14 @@ function CompareResultContent() {
     if (qpTo) setTo(qpTo);
   }, [searchParams]);
 
-  // Fetch available routes using React Query when required params are present
-  const dateISO = departureDate ? `${departureDate}T00:00:00` : "";
+  // Fetch available routes using filter API
+  // Format dates properly for the API (date-time format)
+  const dateISO = departureDate 
+    ? new Date(departureDate + 'T00:00:00').toISOString() 
+    : undefined;
+  const endDateISO = returnDate 
+    ? new Date(returnDate + 'T23:59:59').toISOString() 
+    : undefined;
   const canSearch = Boolean(from && to && dateISO);
 
   // Debounce filters (300ms)
@@ -79,19 +99,83 @@ function CompareResultContent() {
     return () => clearTimeout(t);
   }, [providersCsv]);
 
-  // TODO: Replace with RTK Query hook
-  // Use useSearchSchedulesQuery from scheduleApiSlice
-  // Note: The searchRoutes endpoint may need to be mapped to searchSchedules endpoint
-  // const { data, isLoading, isError, error, refetch, isFetching } = useSearchSchedulesQuery({
-  //   startDate: dateISO,
-  //   endDate: dateISO, // Adjust as needed
-  // });
-  const data = null as CompareData | null; // TODO: Get from RTK Query
-  const isLoading = false; // TODO: Get from RTK Query
-  const isError = false; // TODO: Get from RTK Query
-  const error = null; // TODO: Get from RTK Query
-  const refetch = () => {}; // TODO: Get from RTK Query
-  const isFetching = false; // TODO: Get from RTK Query
+  // Fetch schedules using filter API
+  const { data: schedulesResponse, isLoading, isError, error, isFetching } = useFilterSchedulesQuery(
+    {
+      origin: from || undefined,
+      destination: to || undefined,
+      startDate: dateISO,
+      endDate: endDateISO,
+      status: 'OPEN',
+      minAvailableSeats: passengers, // Filter by minimum seats needed
+      page: 0,
+      size: 50,
+    },
+    { skip: !hasToken || !canSearch }
+  );
+  
+  // Extract and transform schedules to routes
+  const allSchedules = Array.isArray(schedulesResponse?.content)
+    ? schedulesResponse.content
+    : Array.isArray(schedulesResponse?.data)
+    ? schedulesResponse.data
+    : Array.isArray(schedulesResponse)
+    ? schedulesResponse
+    : [];
+  
+  // Transform schedules to routes format and apply filters
+  const routes = useMemo(() => {
+    let filtered = allSchedules.map((schedule: any): Route => {
+      const departureTime = new Date(schedule.departureTime || schedule.departure_time);
+      const arrivalTime = new Date(schedule.arrivalTime || schedule.arrival_time);
+      const durationMs = arrivalTime.getTime() - departureTime.getTime();
+      const durationMinutes = Math.round(durationMs / (1000 * 60));
+      
+      return {
+        schedule_id: schedule.id,
+        provider_name: schedule.companyName || schedule.company?.name || 'Unknown Provider',
+        vehicle_type: schedule.vehicleType || schedule.vehicle?.type || 'BUS',
+        origin: schedule.origin || schedule.trip?.origin || '',
+        destination: schedule.destination || schedule.trip?.destination || '',
+        departure_time: schedule.departureTime || schedule.departure_time,
+        arrival_time: schedule.arrivalTime || schedule.arrival_time,
+        duration_minutes: durationMinutes,
+        available_seats: schedule.availableSeats || schedule.available_seats || 0,
+        total_seats: schedule.totalSeats || schedule.vehicle?.capacity || 0,
+        amenities: schedule.amenities || [],
+        base_price: schedule.price || 0,
+        companyId: schedule.companyId || schedule.company?.id,
+        vehicleNo: schedule.vehicleNo || schedule.vehicle?.vehicleNo,
+      };
+    });
+    
+    // Apply price filters
+    if (dMinPrice) {
+      const min = parseFloat(dMinPrice);
+      if (!isNaN(min)) filtered = filtered.filter((r: any) => r.base_price >= min);
+    }
+    if (dMaxPrice) {
+      const max = parseFloat(dMaxPrice);
+      if (!isNaN(max)) filtered = filtered.filter((r: any) => r.base_price <= max);
+    }
+    
+    // Apply provider filter
+    if (dProvidersCsv && dProvidersCsv.trim()) {
+      const providerNames = dProvidersCsv.split(',').map(p => p.trim().toLowerCase());
+      filtered = filtered.filter((r: any) => 
+        providerNames.some(name => r.provider_name.toLowerCase().includes(name))
+      );
+    }
+    
+    // Filter by available seats
+    filtered = filtered.filter((r: any) => r.available_seats >= passengers);
+    
+    return filtered;
+  }, [allSchedules, dMinPrice, dMaxPrice, dProvidersCsv, passengers]);
+  
+  // Get selected schedule or first schedule for price display
+  const displaySchedule = selectedSchedule || routes[0];
+  const displayPrice = displaySchedule ? displaySchedule.base_price * passengers : 0;
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden">
@@ -130,21 +214,37 @@ function CompareResultContent() {
           </div>
           {/* Details Card */}
           <div className="flex flex-col gap-4 w-full max-w-sm">
-            <div className="flex items-center gap-3 mb-2">
-              <Image
-                src="/PeaceMass-Logo.jpg"
-                alt="Peace Mass"
-                width={48}
-                height={48}
-                className="object-contain rounded-lg"
-              />
-              <div>
-                <div className="font-bold text-lg text-[#222]">Peace Mass</div>
-                <div className="text-gray-500 text-sm">
-                  {from || "Lagos"} - {to || "Abuja"}
+            {displaySchedule ? (
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden">
+                  <Image
+                    src="/Logo.png"
+                    alt={displaySchedule.provider_name}
+                    width={48}
+                    height={48}
+                    className="object-contain rounded-lg"
+                  />
+                </div>
+                <div>
+                  <div className="font-bold text-lg text-[#222]">{displaySchedule.provider_name}</div>
+                  <div className="text-gray-500 text-sm">
+                    {displaySchedule.origin} - {displaySchedule.destination}
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                  <span className="text-gray-400 text-xs">No schedule</span>
+                </div>
+                <div>
+                  <div className="font-bold text-lg text-[#222]">Select a schedule</div>
+                  <div className="text-gray-500 text-sm">
+                    {from || "Lagos"} - {to || "Abuja"}
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-3">
               <span className="text-black font-medium">Passenger</span>
               <div className="flex items-center border rounded-lg bg-white">
@@ -195,15 +295,24 @@ function CompareResultContent() {
               </div>
             </div>
             <div className="text-2xl font-bold text-[#1CBF4B] mt-2 mb-2">
-              ₦26,000
+              {displayPrice > 0 ? `₦${displayPrice.toLocaleString()}` : '₦0'}
             </div>
             <button
-              className="bg-[#8B2323] text-white px-10 py-3 rounded-lg font-semibold text-lg cursor-pointer w-full"
+              className={`px-10 py-3 rounded-lg font-semibold text-lg cursor-pointer w-full ${
+                displaySchedule && displaySchedule.available_seats >= passengers
+                  ? "bg-[#8B2323] text-white hover:bg-[#7A1F1F]"
+                  : "bg-gray-300 text-gray-600 cursor-not-allowed"
+              }`}
+              disabled={!displaySchedule || displaySchedule.available_seats < passengers}
               onClick={() => {
-                router.push("/signin");
+                if (displaySchedule && displaySchedule.available_seats >= passengers) {
+                  router.push(`/bookings/${displaySchedule.schedule_id}?passengers=${passengers}`);
+                }
               }}
             >
-              Proceed
+              {displaySchedule && displaySchedule.available_seats >= passengers
+                ? "Proceed"
+                : "No Available Seats"}
             </button>
           </div>
         </div>
@@ -324,12 +433,15 @@ function CompareResultContent() {
               Failed to load routes. {String((error as any)?.message || "")}
             </div>
           )}
-          {data && data.routes && data.routes.length > 0 && (
+          {routes && routes.length > 0 && (
             <div className="bg-white rounded-xl shadow divide-y">
-              {data.routes.map((r) => (
+              {routes.map((r: any) => (
                 <div
                   key={r.schedule_id}
-                  className="p-4 flex items-center gap-4"
+                  className={`p-4 flex items-center gap-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                    selectedSchedule?.schedule_id === r.schedule_id ? 'bg-blue-50 border-l-4 border-[#8B2323]' : ''
+                  }`}
+                  onClick={() => setSelectedSchedule(r)}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -339,44 +451,56 @@ function CompareResultContent() {
                       <span className="text-xs text-gray-500">
                         {r.vehicle_type}
                       </span>
+                      {r.vehicleNo && (
+                        <span className="text-xs text-gray-400">
+                          ({r.vehicleNo})
+                        </span>
+                      )}
                     </div>
                     <div className="text-sm text-gray-700 truncate">
                       {r.origin} → {r.destination}
                     </div>
                     <div className="text-xs text-gray-500">
                       Departs: {new Date(r.departure_time).toLocaleString()} •
-                      Arrives: {new Date(r.arrival_time).toLocaleString()} •
-                      Duration: {r.duration_minutes}m
+                      Arrives: {new Date(r.arrival_time).toLocaleString()}
+                      {r.duration_minutes && ` • Duration: ${r.duration_minutes}m`}
                     </div>
                     <div className="text-xs text-gray-500">
-                      Seats: {r.available_seats}/{r.total_seats} • Amenities:{" "}
-                      {r.amenities.join(", ")}
+                      Seats: {r.available_seats}/{r.total_seats}
+                      {r.amenities && r.amenities.length > 0 && ` • Amenities: ${r.amenities.join(", ")}`}
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-bold text-[#1CBF4B]">
                       ₦{r.base_price.toLocaleString()}
                     </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {passengers > 1 && `Total: ₦${(r.base_price * passengers).toLocaleString()}`}
+                    </div>
                     <button
-                      className={`mt-2 px-4 py-2 rounded-lg text-sm cursor-pointer ${r.available_seats > 0 ? "bg-[#8B2323] text-white" : "bg-gray-300 text-gray-600 cursor-not-allowed"}`}
-                      disabled={r.available_seats <= 0}
-                      onClick={() =>
-                        r.available_seats > 0 &&
-                        router.push(
-                          `/bookings/${encodeURIComponent(r.schedule_id)}?passengers=${passengers}`,
-                        )
-                      }
+                      className={`mt-2 px-4 py-2 rounded-lg text-sm cursor-pointer ${
+                        r.available_seats >= passengers 
+                          ? "bg-[#8B2323] text-white hover:bg-[#7A1F1F]" 
+                          : "bg-gray-300 text-gray-600 cursor-not-allowed"
+                      }`}
+                      disabled={r.available_seats < passengers}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (r.available_seats >= passengers) {
+                          setSelectedSchedule(r);
+                        }
+                      }}
                     >
-                      {r.available_seats > 0 ? "Select" : "Unavailable"}
+                      {r.available_seats >= passengers ? "Select" : "Unavailable"}
                     </button>
                   </div>
                 </div>
               ))}
             </div>
           )}
-          {data && data.routes && data.routes.length === 0 && (
+          {!isLoading && !isFetching && routes && routes.length === 0 && canSearch && (
             <div className="bg-white rounded-xl shadow p-4 text-gray-600">
-              No routes found for the selected criteria.
+              No routes found for the selected criteria. Try adjusting your filters or dates.
             </div>
           )}
         </div>

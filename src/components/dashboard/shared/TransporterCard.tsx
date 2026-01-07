@@ -6,6 +6,7 @@ type TransporterCardProps = {
     logo: string
     price: number
     route?: string
+    primarySchedule?: any
   }
   from?: string
   to?: string

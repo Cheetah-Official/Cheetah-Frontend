@@ -110,6 +110,34 @@ export const SCHEDULES = {
     const query = params.toString();
     return `/api/schedules/paginate${query ? `?${query}` : ''}`;
   }, // GET /api/schedules/paginate
+  FILTER_SCHEDULES: (filters: {
+    origin?: string;
+    destination?: string;
+    startDate?: string;
+    endDate?: string;
+    status?: string;
+    tripId?: number;
+    vehicleId?: number;
+    companyId?: number;
+    minAvailableSeats?: number;
+    page?: number;
+    size?: number;
+  }) => {
+    const params = new URLSearchParams();
+    if (filters.origin) params.append('origin', filters.origin);
+    if (filters.destination) params.append('destination', filters.destination);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.status) params.append('status', filters.status);
+    if (filters.tripId !== undefined) params.append('tripId', filters.tripId.toString());
+    if (filters.vehicleId !== undefined) params.append('vehicleId', filters.vehicleId.toString());
+    if (filters.companyId !== undefined) params.append('companyId', filters.companyId.toString());
+    if (filters.minAvailableSeats !== undefined) params.append('minAvailableSeats', filters.minAvailableSeats.toString());
+    if (filters.page !== undefined) params.append('page', filters.page.toString());
+    if (filters.size !== undefined) params.append('size', filters.size.toString());
+    const query = params.toString();
+    return `/api/schedules/filter${query ? `?${query}` : ''}`;
+  }, // GET /api/schedules/filter
 };
 
 // Vehicle endpoints

@@ -104,6 +104,14 @@ export const scheduleApiSlice = apiSlice.injectEndpoints({
       transformResponse: (response: any) => response?.data || response,
       providesTags: ['Schedule'],
     }),
+    filterSchedules: builder.query({
+      query: (filters) => ({
+        url: SCHEDULES.FILTER_SCHEDULES(filters),
+        method: "GET",
+      }),
+      transformResponse: (response: any) => response?.data || response,
+      providesTags: ['Schedule'],
+    }),
   }),
 });
 
@@ -120,5 +128,6 @@ export const {
   useGetPaginatedSchedulesByStatusQuery,
   useSearchSchedulesQuery,
   useGetAllSchedulesPaginatedQuery,
+  useFilterSchedulesQuery,
 } = scheduleApiSlice;
 

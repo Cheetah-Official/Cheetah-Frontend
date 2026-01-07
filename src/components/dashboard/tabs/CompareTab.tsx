@@ -7,6 +7,7 @@ type Company = {
   logo: string
   price: number
   route?: string
+  primarySchedule?: any
 }
 
 type CompareTabProps = {

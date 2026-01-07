@@ -1,10 +1,18 @@
 import Image from "next/image"
 import { FaArrowLeft, FaExclamationTriangle, FaCar } from "react-icons/fa"
+import { useMemo, useState } from "react"
+import { useGetBookingsByScheduleQuery } from "@/feature/bookings/bookingApiSlice"
 
 type Company = {
   name: string
   logo: string
   price: number
+  // Primary schedule for this company/route (from dashboard)
+  primarySchedule?: {
+    id?: number
+    totalSeats?: number
+    availableSeats?: number
+  } | any
 }
 
 type SeatStatus = "open" | "booked" | "unavailable"
@@ -14,7 +22,7 @@ type SeatAllocationProps = {
   from: string
   to: string
   onBack: () => void
-  onProceed: () => void
+  onProceed: (payload: { scheduleId: number; seatNumber: number }) => void
 }
 
 export default function SeatAllocation({
@@ -24,25 +32,47 @@ export default function SeatAllocation({
   onBack,
   onProceed,
 }: SeatAllocationProps) {
-  // Seat data: 1-15 with their statuses (matching the image)
-  // Seats 5,6 are booked (orange), seat 8 is unavailable (dark red), rest are open (light gray)
-  const seats: Array<{ number: number; status: SeatStatus }> = [
-    { number: 1, status: "open" },
-    { number: 2, status: "open" },
-    { number: 3, status: "open" },
-    { number: 4, status: "open" },
-    { number: 5, status: "booked" },
-    { number: 6, status: "booked" },
-    { number: 7, status: "open" },
-    { number: 8, status: "unavailable" },
-    { number: 9, status: "open" },
-    { number: 10, status: "open" },
-    { number: 11, status: "open" },
-    { number: 12, status: "open" },
-    { number: 13, status: "open" },
-    { number: 14, status: "open" },
-    { number: 15, status: "open" },
-  ]
+  const scheduleId = company.primarySchedule?.id
+  const totalSeatsFromSchedule =
+    company.primarySchedule?.totalSeats ||
+    company.primarySchedule?.total_seats ||
+    company.primarySchedule?.vehicle?.capacity ||
+    0
+
+  // Fetch existing bookings for this schedule to mark booked seats
+  const { data: bookingsResponse } = useGetBookingsByScheduleQuery(
+    { scheduleId: Number(scheduleId), page: 0, size: 100 },
+    { skip: !scheduleId },
+  )
+
+  const bookedSeatNumbers = useMemo(() => {
+    const list =
+      (bookingsResponse as any)?.content ||
+      (bookingsResponse as any)?.data ||
+      bookingsResponse ||
+      []
+    return new Set(
+      list
+        .map((b: any) => parseInt(b.seatNumber || b.seat_number || "", 10))
+        .filter((n: number) => !Number.isNaN(n)),
+    )
+  }, [bookingsResponse])
+
+  const [selectedSeat, setSelectedSeat] = useState<number | null>(null)
+
+  // Generate seats based on totalSeats and booking data
+  const seats: Array<{ number: number; status: SeatStatus }> = useMemo(() => {
+    const maxSeats = Math.max(0, Number(totalSeatsFromSchedule) || 0)
+    const result: Array<{ number: number; status: SeatStatus }> = []
+    for (let i = 1; i <= maxSeats; i++) {
+      const isBooked = bookedSeatNumbers.has(i)
+      result.push({
+        number: i,
+        status: isBooked ? "booked" : "open",
+      })
+    }
+    return result
+  }, [totalSeatsFromSchedule, bookedSeatNumbers])
 
   const getSeatColor = (status: SeatStatus) => {
     switch (status) {
@@ -55,14 +85,16 @@ export default function SeatAllocation({
     }
   }
 
-  // Arrange seats in rows: 15 seats total (matching the image)
-  const seatRows = [
-    [1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [9, 10, 11],
-    [12, 13, 14, 15],
-  ]
+  // Arrange seats in rows. For now, render in a simple grid approximation.
+  const seatRows: number[][] = useMemo(() => {
+    if (seats.length === 0) return []
+    const rows: number[][] = []
+    const seatsPerRow = 4
+    for (let i = 0; i < seats.length; i += seatsPerRow) {
+      rows.push(seats.slice(i, i + seatsPerRow).map((s) => s.number))
+    }
+    return rows
+  }, [seats])
 
   return (
     <div className="bg-white rounded-xl p-3 sm:p-4 md:p-6 lg:p-8 flex flex-col gap-4 sm:gap-6">
@@ -83,6 +115,12 @@ export default function SeatAllocation({
         <div className="flex-1 flex flex-col gap-4 sm:gap-6">
           {/* Seat Map Section */}
           <div className="flex-1 bg-gray-50 rounded-xl p-4 sm:p-5 md:p-6">
+            {seats.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-sm sm:text-base text-gray-600">
+                Seat layout not available for this vehicle.
+              </div>
+            ) : (
+              <>
             {/* Steering Wheel and Row 1 Seats - Centered on mobile */}
             <div className="flex items-center justify-center sm:justify-start gap-3 sm:gap-6 md:gap-8 lg:gap-12 mb-4 sm:mb-6">
               {/* Steering Wheel Icon (Driver Position) */}
@@ -94,18 +132,25 @@ export default function SeatAllocation({
                 className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0"
               />
               {/* Row 1 Seats */}
-              {seatRows[0].map((seatNum) => {
+              {(seatRows[0] || []).map((seatNum) => {
                 const seat = seats.find((s) => s.number === seatNum)
                 if (!seat) return null
                 return (
                   <div
                     key={seat.number}
+                    onClick={() => {
+                      if (seat.status === "open") setSelectedSeat(seat.number)
+                    }}
                     className={`w-11 h-11 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-sm sm:text-base font-semibold transition-all flex-shrink-0 ${
                       seat.status === "open"
                         ? "hover:bg-gray-400 active:bg-gray-500 text-gray-700 cursor-pointer"
                         : "cursor-not-allowed"
                     } ${getSeatColor(seat.status)} ${
                       seat.status === "open" ? "text-gray-700" : "text-white"
+                    } ${
+                      selectedSeat === seat.number
+                        ? "ring-2 ring-offset-2 ring-[#8B2323]"
+                        : ""
                     }`}
                   >
                     {seat.number}
@@ -124,12 +169,19 @@ export default function SeatAllocation({
                     return (
                       <div
                         key={seat.number}
+                        onClick={() => {
+                          if (seat.status === "open") setSelectedSeat(seat.number)
+                        }}
                         className={`w-11 h-11 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-sm sm:text-base font-semibold transition-all flex-shrink-0 ${
                           seat.status === "open"
                             ? "hover:bg-gray-400 active:bg-gray-500 text-gray-700 cursor-pointer"
                             : "cursor-not-allowed"
                         } ${getSeatColor(seat.status)} ${
                           seat.status === "open" ? "text-gray-700" : "text-white"
+                        } ${
+                          selectedSeat === seat.number
+                            ? "ring-2 ring-offset-2 ring-[#8B2323]"
+                            : ""
                         }`}
                       >
                         {seat.number}
@@ -139,6 +191,8 @@ export default function SeatAllocation({
                 </div>
               ))}
             </div>
+              </>
+            )}
           </div>
 
           {/* Legend - Centered on mobile, right-aligned on desktop */}
@@ -201,7 +255,17 @@ export default function SeatAllocation({
           <span className="leading-relaxed">Remember to confirm your travel details before proceeding</span>
         </div>
         <button
-          onClick={onProceed}
+          onClick={() => {
+            if (!scheduleId) {
+              alert("No schedule selected for this transporter.")
+              return
+            }
+            if (!selectedSeat) {
+              alert("Please select a seat before proceeding.")
+              return
+            }
+            onProceed({ scheduleId: Number(scheduleId), seatNumber: selectedSeat })
+          }}
           className="bg-[#8B2323] text-white px-6 sm:px-8 md:px-10 py-3 sm:py-3 rounded-lg font-semibold text-base sm:text-base md:text-lg cursor-pointer hover:bg-[#7A1F1F] active:bg-[#6B1A1A] transition-colors shadow-md w-full sm:w-auto"
         >
           Proceed
