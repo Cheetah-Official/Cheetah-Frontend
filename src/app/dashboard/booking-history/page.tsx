@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { FaChevronLeft, FaCheckCircle, FaWifi, FaShieldAlt } from "react-icons/fa";
+import { FaChevronLeft, FaCheckCircle, FaWifi, FaShieldAlt, FaClock } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import Sidebar from "@/components/dashboard/sidebar/Sidebar";
@@ -14,6 +14,7 @@ import {
 import { useGetAuthenticatedUserQuery } from "@/feature/auth/authApiSlice";
 import { useGetBookingsByUserQuery } from "@/feature/bookings/bookingApiSlice";
 import { useGetScheduleByIdQuery } from "@/feature/schedules/scheduleApiSlice";
+import { useGetTicketByBookingQuery } from "@/feature/tickets/ticketApiSlice";
 
 export default function BookingHistoryPage() {
   const router = useRouter();
@@ -182,11 +183,15 @@ export default function BookingHistoryPage() {
         company: b.companyName || b.schedule_details?.companyName || "Cheetah Transport", // Will be updated from schedule
         logo: "/Logo.png",
         route: `${b.origin || ""} - ${b.destination || ""}`,
+        origin: b.origin || "",
+        destination: b.destination || "",
         price: b.price || 0,
         timeAgo,
         bookingTime, // When the ticket was booked
         ticketId: b.bookingRef || b.booking_reference || `#BKG-${b.id}`,
         departure: departureText,
+        departureTime: departureTime, // Store raw departure time for download
+        arrivalTime: b.arrivalTime || b.arrival_time || null, // Store arrival time if available
         timeRemaining,
         timeRemainingMinutes,
         progressPercentage,
@@ -197,6 +202,7 @@ export default function BookingHistoryPage() {
         status: (b.status || "").toUpperCase(),
         hasWifi: true,
         hasInsurance: true,
+        createdAt: createdAt, // Store for booking time fallback
       };
     });
   }, [bookingsResponse]);
@@ -266,6 +272,12 @@ export default function BookingHistoryPage() {
   const scheduleId = selectedBooking?.scheduleId ? Number(selectedBooking.scheduleId) : null;
   const { data: scheduleData } = useGetScheduleByIdQuery(scheduleId!, {
     skip: !scheduleId,
+  });
+
+  // Fetch ticket details for selected booking
+  const bookingId = selectedBooking?.id ? Number(selectedBooking.id) : null;
+  const { data: ticketData, isLoading: loadingTicket } = useGetTicketByBookingQuery(bookingId!, {
+    skip: !bookingId,
   });
 
   // Also add selected booking's schedule to the map
@@ -342,6 +354,374 @@ export default function BookingHistoryPage() {
       setSelectedBooking(booking);
     }
     // If it's the same booking, do nothing (prevents clearing on double-click)
+  };
+
+  // Download ticket function
+  const handleDownloadTicket = () => {
+    if (!selectedBooking) {
+      alert("Booking data is not available. Please select a booking.");
+      return;
+    }
+
+    // Note: ticketData might not be loaded yet, but we can still generate a ticket with booking data
+
+    // Get ticket number
+    const ticketNumber = ticketData?.ticketNumber || ticketData?.bookingRef || selectedBooking.ticketId || "N/A";
+    
+    // Get passenger information - check multiple sources
+    const passengerName = ticketData?.passengerName || 
+                          selectedBooking.passengerName || 
+                          user?.name || 
+                          user?.fullName || 
+                          user?.firstName || 
+                          "N/A";
+    const passengerEmail = ticketData?.passengerEmail || 
+                          selectedBooking.passengerEmail || 
+                          user?.email || 
+                          "N/A";
+    
+    // Get seat number
+    const seatNumber = ticketData?.seatNumber || 
+                      selectedBooking.seats?.[0] || 
+                      selectedBooking.seatNumber || 
+                      "N/A";
+    
+    // Get valid until
+    const validUntil = ticketData?.validUntil 
+      ? new Date(ticketData.validUntil).toLocaleString() 
+      : "N/A";
+    
+    // Get departure time - check scheduleData first, then booking
+    const departureTimeRaw = scheduleData?.departureTime || 
+                            scheduleData?.departure_time || 
+                            scheduleData?.departureDate ||
+                            selectedBooking.departureTime || 
+                            selectedBooking.departure_time ||
+                            selectedBooking.departure ||
+                            null;
+    const departureTime = departureTimeRaw 
+      ? new Date(departureTimeRaw).toLocaleString() 
+      : "N/A";
+    
+    // Get arrival time - check scheduleData first, then booking
+    const arrivalTimeRaw = scheduleData?.arrivalTime || 
+                          scheduleData?.arrival_time || 
+                          scheduleData?.arrivalDate ||
+                          selectedBooking.arrivalTime || 
+                          selectedBooking.arrival_time ||
+                          selectedBooking.arrival ||
+                          null;
+    const arrivalTime = arrivalTimeRaw 
+      ? new Date(arrivalTimeRaw).toLocaleString() 
+      : "N/A";
+    
+    // Get route - check scheduleData for origin/destination, then booking
+    let origin = scheduleData?.origin || 
+                 scheduleData?.from || 
+                 scheduleData?.fromLocation ||
+                 selectedBooking.origin ||
+                 "";
+    let destination = scheduleData?.destination || 
+                     scheduleData?.to || 
+                     scheduleData?.toLocation ||
+                     selectedBooking.destination ||
+                     "";
+    
+    // If we have origin and destination, construct route
+    let route = selectedBooking.route || "N/A";
+    if (origin && destination && route === "N/A") {
+      route = `${origin} - ${destination}`;
+    } else if (route.includes(" - ") || route.includes(" → ")) {
+      // Route is already formatted
+    } else if (origin && destination) {
+      route = `${origin} - ${destination}`;
+    }
+    
+    // Get company name
+    const company = selectedBooking.company || 
+                   scheduleData?.companyName || 
+                   scheduleData?.company?.name || 
+                   "N/A";
+    
+    // Get vehicle number
+    const vehicleNo = selectedBooking.vehicleNo || 
+                     scheduleData?.vehicleNo || 
+                     scheduleData?.vehicle?.vehicleNo || 
+                     scheduleData?.vehicle_no ||
+                     "N/A";
+    
+    // Get price
+    const price = selectedBooking.price 
+      ? `₦${Number(selectedBooking.price).toLocaleString()}` 
+      : "N/A";
+    
+    // Get booking time
+    const bookingTime = selectedBooking.bookingTime || 
+                       (selectedBooking.createdAt 
+                         ? new Date(selectedBooking.createdAt).toLocaleString() 
+                         : "N/A");
+    
+    // Get QR code
+    const qrCode = ticketData?.qrCode ? `data:image/png;base64,${ticketData.qrCode}` : "";
+
+    // Create ticket HTML
+    const ticketHTML = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ticket - ${ticketNumber}</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .ticket-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    .ticket-header {
+      background: linear-gradient(135deg, #8B2323 0%, #A02A2A 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    .ticket-header h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    .ticket-number {
+      font-size: 18px;
+      opacity: 0.9;
+      font-weight: 500;
+    }
+    .ticket-body {
+      padding: 30px;
+    }
+    .ticket-section {
+      margin-bottom: 30px;
+      padding-bottom: 30px;
+      border-bottom: 2px dashed #e0e0e0;
+    }
+    .ticket-section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    .section-title {
+      font-size: 14px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    .info-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .info-label {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .info-value {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+    }
+    .route-section {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .route-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+    .route-row:last-child {
+      margin-bottom: 0;
+    }
+    .route-location {
+      font-size: 24px;
+      font-weight: 700;
+      color: #8B2323;
+    }
+    .route-arrow {
+      font-size: 20px;
+      color: #666;
+    }
+    .route-time {
+      font-size: 14px;
+      color: #666;
+      margin-top: 5px;
+    }
+    .qr-section {
+      text-align: center;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+    .qr-code {
+      max-width: 200px;
+      margin: 0 auto 15px;
+    }
+    .qr-code img {
+      width: 100%;
+      height: auto;
+      border: 4px solid white;
+      border-radius: 8px;
+    }
+    .footer {
+      text-align: center;
+      padding: 20px;
+      background: #f8f9fa;
+      color: #666;
+      font-size: 12px;
+    }
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      .ticket-container {
+        box-shadow: none;
+        border-radius: 0;
+      }
+      @page {
+        margin: 0;
+        size: A4;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="ticket-container">
+    <div class="ticket-header">
+      <h1>${company}</h1>
+      <div class="ticket-number">Ticket #${ticketNumber}</div>
+    </div>
+    
+    <div class="ticket-body">
+      <div class="ticket-section">
+        <div class="section-title">Passenger Information</div>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Passenger Name</div>
+            <div class="info-value">${passengerName}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Email</div>
+            <div class="info-value">${passengerEmail}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Seat Number</div>
+            <div class="info-value">${seatNumber}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Vehicle Number</div>
+            <div class="info-value">${vehicleNo}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ticket-section">
+        <div class="section-title">Journey Details</div>
+        <div class="route-section">
+          <div class="route-row">
+            <div>
+              <div class="route-location">${origin || route.split(" → ")[0] || route.split(" - ")[0] || route}</div>
+              <div class="route-time">Departure: ${departureTime}</div>
+            </div>
+            <div class="route-arrow">→</div>
+            <div style="text-align: right;">
+              <div class="route-location">${destination || route.split(" → ")[1] || route.split(" - ")[1] || route}</div>
+              <div class="route-time">Arrival: ${arrivalTime}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ticket-section">
+        <div class="section-title">Booking Information</div>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Booking Time</div>
+            <div class="info-value">${bookingTime}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Price</div>
+            <div class="info-value">${price}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Valid Until</div>
+            <div class="info-value">${validUntil}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Status</div>
+            <div class="info-value">${selectedBooking.status || "Confirmed"}</div>
+          </div>
+        </div>
+      </div>
+
+      ${qrCode ? `
+      <div class="ticket-section">
+        <div class="section-title">QR Code</div>
+        <div class="qr-section">
+          <div class="qr-code">
+            <img src="${qrCode}" alt="Ticket QR Code" />
+          </div>
+          <p style="color: #666; font-size: 12px;">Present this QR code at the boarding point</p>
+        </div>
+      </div>
+      ` : ""}
+    </div>
+
+    <div class="footer">
+      <p>Thank you for choosing ${company}!</p>
+      <p style="margin-top: 5px;">Please arrive at least 30 minutes before departure time.</p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    // Open ticket in new window
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(ticketHTML);
+      printWindow.document.close();
+      
+      // Wait for content to load, then trigger print dialog
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print();
+        }, 250);
+      };
+    } else {
+      alert("Please allow pop-ups to download your ticket.");
+    }
   };
 
   const formatPrice = (price: number) => {
@@ -465,10 +845,13 @@ export default function BookingHistoryPage() {
               <h2 className="text-lg sm:text-xl font-bold text-gray-800">Ticket Details</h2>
               <div className="flex flex-col items-end gap-1">
               <span className="text-xs sm:text-sm font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                {selectedBooking.ticketId}
+                {ticketData?.ticketNumber || ticketData?.bookingRef || selectedBooking.ticketId}
               </span>
                 {selectedBooking.bookingTime && (
                   <span className="text-xs text-gray-500">Booked: {selectedBooking.bookingTime}</span>
+                )}
+                {ticketData?.dateCreated && (
+                  <span className="text-xs text-gray-500">Ticket Created: {new Date(ticketData.dateCreated).toLocaleString()}</span>
                 )}
               </div>
             </div>
@@ -501,7 +884,14 @@ export default function BookingHistoryPage() {
                 <p className="text-base sm:text-lg font-bold text-gray-800 whitespace-nowrap">
                   {formatPrice(selectedBooking.price)}
                 </p>
-                <div className="flex items-center gap-2 bg-[#24C02F] px-2 sm:px-3 py-1 rounded-2xl flex-shrink-0">
+                <div className={`flex items-center gap-2 px-2 sm:px-3 py-1 rounded-2xl flex-shrink-0 ${
+                  selectedBooking.status?.toUpperCase() === 'PENDING' 
+                    ? 'bg-[#E08B2F]' // Orange for pending
+                    : 'bg-[#24C02F]' // Green for confirmed/completed
+                }`}>
+                  {selectedBooking.status?.toUpperCase() === 'PENDING' ? (
+                    <FaClock className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                  ) : (
                   <Image
                     src="/Confirm-tick.png"
                     alt="Confirmed"
@@ -509,6 +899,7 @@ export default function BookingHistoryPage() {
                     height={16}
                     className="w-3 h-3 sm:w-4 sm:h-4"
                   />
+                  )}
                   <span className="text-xs sm:text-sm font-semibold text-white whitespace-nowrap">{selectedBooking.status}</span>
                 </div>
               </div>
@@ -557,7 +948,7 @@ export default function BookingHistoryPage() {
               )}
             </div>
 
-            {/* Seat Number */}
+            {/* Seat Number - Use ticket data if available */}
             <div className="mb-6">
               <div className="flex flex-wrap items-center gap-2">
                 <Image
@@ -569,17 +960,65 @@ export default function BookingHistoryPage() {
                 />
                 <span className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">Seat Number</span>
                 <div className="flex gap-2 flex-wrap">
-                  {selectedBooking.seats.map((seat: any, idx: number) => (
-                    <div
-                      key={idx}
-                      className="w-8 h-8 sm:w-10 sm:h-10 bg-[#757575] rounded-lg flex items-center justify-center flex-shrink-0"
-                    >
-                      <span className="text-xs sm:text-sm text-white">{seat}</span>
+                  {loadingTicket ? (
+                    <span className="text-xs text-gray-500">Loading...</span>
+                  ) : ticketData?.seatNumber ? (
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#757575] rounded-lg flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs sm:text-sm text-white font-bold">{ticketData.seatNumber}</span>
                     </div>
-                  ))}
+                  ) : selectedBooking.seats && selectedBooking.seats.length > 0 ? (
+                    selectedBooking.seats.map((seat: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="w-8 h-8 sm:w-10 sm:h-10 bg-[#757575] rounded-lg flex items-center justify-center flex-shrink-0"
+                      >
+                        <span className="text-xs sm:text-sm text-white">{seat}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-xs text-gray-500">Not assigned</span>
+                  )}
                 </div>
               </div>
             </div>
+
+            {/* Ticket Information from API */}
+            {ticketData && (
+              <div className="mb-6 space-y-3">
+                {ticketData.validUntil && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">Valid Until</p>
+                    <p className="text-sm font-semibold text-gray-800">
+                      {new Date(ticketData.validUntil).toLocaleString()}
+                    </p>
+                  </div>
+                )}
+                {ticketData.passengerName && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">Passenger Name</p>
+                    <p className="text-sm font-semibold text-gray-800">{ticketData.passengerName}</p>
+                  </div>
+                )}
+                {ticketData.passengerEmail && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">Passenger Email</p>
+                    <p className="text-sm font-semibold text-gray-800">{ticketData.passengerEmail}</p>
+                  </div>
+                )}
+                {ticketData.qrCode && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-2">QR Code</p>
+                    <div className="flex justify-center">
+                      <img 
+                        src={`data:image/png;base64,${ticketData.qrCode}`} 
+                        alt="Ticket QR Code" 
+                        className="w-32 h-32 sm:w-40 sm:h-40"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Amenities and Download Ticket Button */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
@@ -602,10 +1041,7 @@ export default function BookingHistoryPage() {
                 )}
               </div>
               <button
-                onClick={() => {
-                  // TODO: Implement download ticket functionality
-                  console.log("Download ticket:", selectedBooking.ticketId);
-                }}
+                onClick={handleDownloadTicket}
                 className="bg-[#8B2323] hover:bg-[#7A1F1F] text-white px-4 py-2.5 sm:px-6 sm:py-2.5 md:px-8 md:py-3 rounded-lg font-semibold transition-colors text-xs sm:text-sm md:text-base shadow-sm cursor-pointer w-full sm:w-auto"
               >
                 Download Ticket

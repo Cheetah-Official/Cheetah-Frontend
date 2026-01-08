@@ -2,6 +2,7 @@ import Image from "next/image"
 import { FaArrowLeft, FaExclamationTriangle, FaCar } from "react-icons/fa"
 import { useMemo, useState } from "react"
 import { useGetBookingsByScheduleQuery } from "@/feature/bookings/bookingApiSlice"
+import { useGetAvailableSeatsQuery } from "@/feature/schedule-seats/scheduleSeatApiSlice"
 
 type Company = {
   name: string
@@ -39,13 +40,31 @@ export default function SeatAllocation({
     company.primarySchedule?.vehicle?.capacity ||
     0
 
-  // Fetch existing bookings for this schedule to mark booked seats
-  const { data: bookingsResponse } = useGetBookingsByScheduleQuery(
-    { scheduleId: Number(scheduleId), page: 0, size: 100 },
+  // Fetch available seats for this schedule
+  const { data: availableSeatsResponse, isLoading: loadingSeats } = useGetAvailableSeatsQuery(
+    Number(scheduleId),
     { skip: !scheduleId },
   )
 
-  const bookedSeatNumbers = useMemo(() => {
+  // Get available seat numbers from the API response
+  const availableSeatNumbers = useMemo(() => {
+    const seats = availableSeatsResponse || []
+    return new Set(
+      seats
+        .map((s: any) => parseInt(s.seatNumber || s.seat_number || "", 10))
+        .filter((n: number) => !Number.isNaN(n)),
+    )
+  }, [availableSeatsResponse])
+
+  // Fallback: Fetch existing bookings for this schedule if available seats endpoint fails
+  const { data: bookingsResponse } = useGetBookingsByScheduleQuery(
+    { scheduleId: Number(scheduleId), page: 0, size: 100 },
+    { skip: !scheduleId || !!availableSeatsResponse },
+  )
+
+  // Fallback: Get booked seat numbers from bookings if available seats not loaded
+  const bookedSeatNumbersFromBookings = useMemo(() => {
+    if (availableSeatsResponse) return new Set<number>() // Don't use bookings if we have available seats data
     const list =
       (bookingsResponse as any)?.content ||
       (bookingsResponse as any)?.data ||
@@ -56,23 +75,40 @@ export default function SeatAllocation({
         .map((b: any) => parseInt(b.seatNumber || b.seat_number || "", 10))
         .filter((n: number) => !Number.isNaN(n)),
     )
-  }, [bookingsResponse])
+  }, [bookingsResponse, availableSeatsResponse])
 
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null)
 
-  // Generate seats based on totalSeats and booking data
+  // Generate seats based on totalSeats and available/booked data
   const seats: Array<{ number: number; status: SeatStatus }> = useMemo(() => {
     const maxSeats = Math.max(0, Number(totalSeatsFromSchedule) || 0)
     const result: Array<{ number: number; status: SeatStatus }> = []
-    for (let i = 1; i <= maxSeats; i++) {
-      const isBooked = bookedSeatNumbers.has(i)
-      result.push({
-        number: i,
-        status: isBooked ? "booked" : "open",
-      })
+    
+    // If we have available seats data from the API, use it
+    // Note: availableSeatsResponse can be an empty array (all seats booked) or undefined (not loaded)
+    if (availableSeatsResponse !== undefined) {
+      // Mark seats based on available seats API
+      // Empty array means all seats are booked
+      for (let i = 1; i <= maxSeats; i++) {
+        const isAvailable = availableSeatNumbers.has(i)
+        result.push({
+          number: i,
+          status: isAvailable ? "open" : "booked",
+        })
+      }
+    } else {
+      // Fallback: Use bookings data if available seats API is not available
+      for (let i = 1; i <= maxSeats; i++) {
+        const isBooked = bookedSeatNumbersFromBookings.has(i)
+        result.push({
+          number: i,
+          status: isBooked ? "booked" : "open",
+        })
+      }
     }
+    
     return result
-  }, [totalSeatsFromSchedule, bookedSeatNumbers])
+  }, [totalSeatsFromSchedule, availableSeatNumbers, availableSeatsResponse, bookedSeatNumbersFromBookings])
 
   const getSeatColor = (status: SeatStatus) => {
     switch (status) {
@@ -115,7 +151,11 @@ export default function SeatAllocation({
         <div className="flex-1 flex flex-col gap-4 sm:gap-6">
           {/* Seat Map Section */}
           <div className="flex-1 bg-gray-50 rounded-xl p-4 sm:p-5 md:p-6">
-            {seats.length === 0 ? (
+            {loadingSeats ? (
+              <div className="flex items-center justify-center h-full text-sm sm:text-base text-gray-600">
+                Loading seat availability...
+              </div>
+            ) : seats.length === 0 ? (
               <div className="flex items-center justify-center h-full text-sm sm:text-base text-gray-600">
                 Seat layout not available for this vehicle.
               </div>

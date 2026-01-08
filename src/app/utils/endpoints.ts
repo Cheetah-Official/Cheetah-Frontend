@@ -140,6 +140,11 @@ export const SCHEDULES = {
   }, // GET /api/schedules/filter
 };
 
+// Schedule Seats endpoints
+export const SCHEDULE_SEATS = {
+  GET_AVAILABLE_SEATS: (scheduleId: number) => `/api/v1/schedule-seats/schedule/${scheduleId}/available`, // GET /api/v1/schedule-seats/schedule/{scheduleId}/available
+};
+
 // Vehicle endpoints
 export const VEHICLES = {
   GET_ALL_VEHICLES: "/api/vehicles", // GET /api/vehicles
