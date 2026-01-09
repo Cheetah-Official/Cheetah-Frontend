@@ -28,17 +28,17 @@ export const authApiSlice = apiSlice.injectEndpoints({
     }),
     registerPerson: builder.mutation({
       query: (data) => {
-        // API expects snake_case: first_name, last_name, phone
+        // API expects camelCase: firstName, lastName, phoneNumber
         const body: any = {
           email: data.email,
           password: data.password,
-          first_name: data.firstName,
-          last_name: data.lastName,
+          firstName: data.firstName,
+          lastName: data.lastName,
         };
         
-        // Only include phone if it's provided
+        // Only include phoneNumber if it's provided
         if (data.phoneNumber) {
-          body.phone = data.phoneNumber;
+          body.phoneNumber = data.phoneNumber;
         }
         
         console.log("registerPerson request body:", body);
