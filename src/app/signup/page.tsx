@@ -22,7 +22,7 @@ export default function SignupPage() {
   const SignupSchema = z.object({
     fullName: z.string().min(3, "Enter your full name"),
     email: z.string().email("Enter a valid email"),
-    phone: z.string().optional(),
+    phoneNumber: z.string().optional(),
     address: z.string().optional(),
     password: z.string().min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string().min(6, "Confirm your password"),
@@ -38,7 +38,7 @@ export default function SignupPage() {
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<SignupForm>({
     resolver: zodResolver(SignupSchema),
-    defaultValues: { fullName: "", email: "", phone: "", address: "", password: "", confirmPassword: "" }
+    defaultValues: { fullName: "", email: "", phoneNumber: "", address: "", password: "", confirmPassword: "" }
   })
 
   const onSubmit = async (data: SignupForm) => {
@@ -60,7 +60,7 @@ export default function SignupPage() {
         password: data.password,
         firstName: firstName,
         lastName: lastName,
-        phoneNumber: data.phone || undefined,
+        phoneNumber: data.phoneNumber || undefined,
       };
 
       console.log("Registration payload:", payload);
@@ -183,11 +183,11 @@ export default function SignupPage() {
       const userData = {
         email: email,
         fullName: data.fullName,
-        phone: data.phone || undefined,
+        phoneNumber: data.phoneNumber || undefined,
       };
 
       // Store tokens and user data
-      if (accessToken) {
+      if (accessToken) {  
         localStorage.setItem('accessToken', accessToken);
       }
       if (refreshToken) {
@@ -268,7 +268,7 @@ export default function SignupPage() {
             <input
               id="phone"
               type="text"
-              {...register('phone')}
+              {...register('phoneNumber')}
               placeholder="Phone Number"
               className="w-full px-2.5 sm:px-4 py-1.5 sm:py-2 bg-white text-black rounded-md sm:rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#8B2323] focus:border-[#8B2323] focus:outline-none text-xs sm:text-sm"
               autoComplete="tel"
